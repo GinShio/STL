@@ -223,7 +223,6 @@ template <typename T, std::size_t N>
 struct tuple_size<array<T, N>> :
       public std::integral_constant<std::size_t, N> {};
 
-}  // namespace container
 }  // namespace stl
 }  // namespace ginshio
 

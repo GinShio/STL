@@ -25,8 +25,8 @@
  */
 
 
-#ifndef GINSHIO_STL__QUEUE_HH_
-#define GINSHIO_STL__QUEUE_HH_ 1
+#ifndef GINSHIO_STL__STACK_HH_
+#define GINSHIO_STL__STACK_HH_ 1
 
 #include "deque.hpp"
 
@@ -36,15 +36,15 @@
 namespace ginshio {
 namespace stl {
 
-/////////////// queue ///////////////
+///////////////////////// stack /////////////////////////
 template <typename T, class Container = ginshio::stl::deque<T>>
-class queue {
+class stack {
   /////////////// private type ///////////////
  private:
   template <typename _Alloc>
   using _UseAlloc = typename
       std::enable_if<std::uses_allocator<Container, _Alloc>::value>::type*;
-  /////////////// define type ///////////////
+  /////////////// member type ///////////////
  public:
   using container_type = Container;
   using value_type = typename Container::value_type;
@@ -60,36 +60,36 @@ class queue {
  public:
   template <typename _Cont = container_type, typename = typename
             std::enable_if<std::is_default_constructible<_Cont>::value>::type*>
-  queue() : c() {}
-  explicit queue(const Container& cont) : c(cont) {}
-  explicit queue(Container&& cont) : c(std::move(cont)) {}
-  queue(const queue& other) : c(other.c) {}
-  queue(queue&& other) noexcept : c(std::move(other.c)) {}
+  stack() : c() {}
+  explicit stack(const Container& cont) : c(cont) {}
+  explicit stack(Container&& cont) : c(std::move(cont)) {}
+  stack(const stack& other) : c(other.c) {}
+  stack(stack&& other) noexcept : c(std::move(other.c)) {}
   template <typename Alloc, typename = _UseAlloc<Alloc>>
-  explicit queue(const Alloc& alloc) : c(alloc) {}
+  explicit stack(const Alloc& alloc) : c(alloc) {}
   template <typename Alloc, typename = _UseAlloc<Alloc>>
-  explicit queue(const Container& cont, const Alloc& alloc) : c(cont, alloc) {}
+  explicit stack(const Container& cont, const Alloc& alloc) : c(cont, alloc) {}
   template <typename Alloc, typename = _UseAlloc<Alloc>>
-  explicit queue(Container&& cont, const Alloc& alloc) :
+  explicit stack(Container&& cont, const Alloc& alloc) :
       c(std::move(cont), alloc) {}
   template <typename Alloc, typename = _UseAlloc<Alloc>>
-  explicit queue(const queue& cont, const Alloc& alloc) : c(cont.c, alloc) {}
+  explicit stack(const stack& cont, const Alloc& alloc) : c(cont.c, alloc) {}
   template <typename Alloc, typename = _UseAlloc<Alloc>>
-  explicit queue(queue&& cont, const Alloc& alloc) : c(cont.c, alloc) {}
+  explicit stack(stack&& cont, const Alloc& alloc) : c(cont.c, alloc) {}
 
   /////////////// destructor function ///////////////
  public:
-  ~queue() noexcept = default;
+  ~stack() noexcept = default;
 
   /////////////// member function ///////////////
  public:
-  queue& operator=(const queue& other) {
+  stack& operator=(const stack& other) {
     if (this != &other) {
       static_cast<void>(this->c.operator=(other.c));
     }
     return *this;
   }
-  queue& operator=(queue&& other) {
+  stack& operator=(stack&& other) {
     static_cast<void>(this->c.operator=(std::move(other.c)));
     return *this;
   }
@@ -97,10 +97,8 @@ class queue {
 
   /////////////// element access ///////////////
  public:
-  reference front() { return c.front(); }
-  constexpr const_reference front() const { return c.front(); }
-  reference back() { return c.back(); }
-  constexpr const_reference back() const { return c.back(); }
+  reference top() { return c.back(); }
+  constexpr const_reference top() const { return c.back(); }
 
   /////////////// capacity ///////////////
  public:
@@ -120,48 +118,47 @@ class queue {
   void emplace(Args... args) {
     c.emplace_back(std::forward<Args>(args)...);
   }
-  void pop() { c.pop_front(); }
-  void swap(queue& other) noexcept { c.swap(other.c); }
+  void pop() { c.pop_back(); }
+  void swap(stack& other) noexcept { c.swap(other.c); }
 };
 
-///////////////////////// queue comparison operators /////////////////////////
+///////////////////////// stack comparison operators /////////////////////////
 template <typename T, typename Container>
-constexpr bool operator==(const queue<T, Container>& lhs,
-                          const queue<T, Container>& rhs) {
+constexpr bool operator==(const stack<T, Container>& lhs,
+                          const stack<T, Container>& rhs) {
   return lhs.get_container() == rhs.get_container();
 }
 template <typename T, typename Container>
-constexpr bool operator!=(const queue<T, Container>& lhs,
-                          const queue<T, Container>& rhs) {
+constexpr bool operator!=(const stack<T, Container>& lhs,
+                          const stack<T, Container>& rhs) {
   return lhs.get_container() != rhs.get_container();
 }
 template <typename T, typename Container>
-constexpr bool operator<(const queue<T, Container>& lhs,
-                         const queue<T, Container>& rhs) {
+constexpr bool operator<(const stack<T, Container>& lhs,
+                         const stack<T, Container>& rhs) {
   return lhs.get_container() < rhs.get_container();
 }
 template <typename T, typename Container>
-constexpr bool operator>(const queue<T, Container>& lhs,
-                         const queue<T, Container>& rhs) {
+constexpr bool operator>(const stack<T, Container>& lhs,
+                         const stack<T, Container>& rhs) {
   return lhs.get_container() > rhs.get_container();
 }
 template <typename T, typename Container>
-constexpr bool operator<=(const queue<T, Container>& lhs,
-                          const queue<T, Container>& rhs) {
+constexpr bool operator<=(const stack<T, Container>& lhs,
+                          const stack<T, Container>& rhs) {
   return !(rhs.get_container() < lhs.get_container());
 }
 template <typename T, typename Container>
-constexpr bool operator>=(const queue<T, Container>& lhs,
-                          const queue<T, Container>& rhs) {
+constexpr bool operator>=(const stack<T, Container>& lhs,
+                          const stack<T, Container>& rhs) {
   return !(lhs.get_container() < rhs.get_container());
 }
 
 
-
 ///////////////////////// speecialization /////////////////////////
 template <typename T, typename Container>
-inline void swap(const queue<T, Container>& lhs,
-                 const queue<T, Container>& rhs) {
+inline void swap(const stack<T, Container>& lhs,
+                 const stack<T, Container>& rhs) {
   lhs.swap(rhs);
 }
 
@@ -169,18 +166,17 @@ inline void swap(const queue<T, Container>& lhs,
 } // namespace ginshio
 
 
-
 namespace std {
 ///////////////////////// speecialization /////////////////////////
 template <typename T, typename Container>
-inline void swap(const ginshio::stl::queue<T, Container>& lhs,
-                 const ginshio::stl::queue<T, Container>& rhs) {
+inline void swap(const ginshio::stl::stack<T, Container>& lhs,
+                 const ginshio::stl::stack<T, Container>& rhs) {
   lhs.swap(rhs);
 }
 
 template <typename T, typename Container, typename Allocator>
-struct uses_allocator<ginshio::stl::queue<T, Container>, Allocator> :
-      public std::uses_allocator<Container, Allocator>::type {};
+struct uses_allocator<ginshio::stl::stack<T, Container>, Allocator>
+    : public std::uses_allocator<Container, Allocator>::type {};
 } // namespace std
 
-#endif // GINSHIO_STL__QUEUE_HH_
+#endif // GINSHIO_STL__STACK_HH_

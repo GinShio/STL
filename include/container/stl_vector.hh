@@ -102,7 +102,7 @@ struct _VectorBase {
   static void __swap_allocator(_AllocatorType& _a, _AllocatorType& _b) {
     std::swap(_a, _b);
   }
-  static constexpr std::size_t __max_size() noexcept {
+  static constexpr std::size_t __max_size() const noexcept {
     return
         static_cast<std::size_t>(std::numeric_limits<std::ptrdiff_t>::max()) /
         sizeof(_ValueType);
@@ -146,8 +146,7 @@ class vector : protected __container_base::_VectorBase<T, Allocator> {
   explicit vector(size_type count, const value_type& value,
                   const allocator_type& alloc = allocator_type()) :
       _Base(count, alloc) {
-    _impl._end = ginshio::stl::
-        uninitialized_fill_n(_impl._begin, count, value);
+    _impl._end = ginshio::stl::uninitialized_fill_n(_impl._begin, count, value);
   }
   explicit vector(size_type count,
                   const allocator_type& alloc = allocator_type()) :
@@ -539,6 +538,14 @@ class vector : protected __container_base::_VectorBase<T, Allocator> {
     _impl._end = ginshio::stl::uninitialized_copy(_first, _last, _impl._begin);
   }
 };
+
+
+
+///////////////////////// java style iterator /////////////////////////
+template <typename T>
+using VectorIterator = T*;
+template <typename T>
+using VectorConstIterator = const T*;
 
 
 

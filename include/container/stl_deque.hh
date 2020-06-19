@@ -350,7 +350,7 @@ struct _DequeBase {
   static void __swap_allocator(_DataAllocType& _a, _DataAllocType& _b) {
     return std::swap(_a, _b);
   }
-  static constexpr std::size_t __max_size() noexcept {
+  static constexpr std::size_t __max_size() const noexcept {
     return
         static_cast<std::size_t>(std::numeric_limits<std::ptrdiff_t>::max()) /
         sizeof(_ValueType);
@@ -455,8 +455,7 @@ class deque : protected __container_base::_DequeBase<T, Allocator> {
       _impl._end = ginshio::stl::
           uninitialized_fill_n(_impl._begin, count, value);
     } catch (...) {
-      _Base::__put_chunk(_impl, _impl._begin._node + 1,
-                         _impl._chunk_size - 3);
+      _Base::__put_chunk(_impl, _impl._begin._node + 1, _impl._chunk_size - 3);
       throw;
     }
   }
@@ -469,8 +468,7 @@ class deque : protected __container_base::_DequeBase<T, Allocator> {
       }
     } catch (...) {
       ginshio::stl::destroy(_impl._begin, _impl._end);
-      _Base::__put_chunk(_impl, _impl._begin._node + 1,
-                         _impl._chunk_size - 3);
+      _Base::__put_chunk(_impl, _impl._begin._node + 1, _impl._chunk_size - 3);
       _impl._end = _impl._begin;
       throw;
     }
@@ -485,8 +483,7 @@ class deque : protected __container_base::_DequeBase<T, Allocator> {
     try {
       _impl._end = ginshio::stl::uninitialized_copy(first, last, _impl._begin);
     } catch (...) {
-      _Base::__put_chunk(_impl, _impl._begin._node + 1,
-                         _impl._chunk_size - 3);
+      _Base::__put_chunk(_impl, _impl._begin._node + 1, _impl._chunk_size - 3);
       throw;
     }
   }
@@ -939,6 +936,15 @@ class deque : protected __container_base::_DequeBase<T, Allocator> {
   static iterator __exten_cap_back(_BaseImpl& _impl, iterator _pos,
                                    const size_type& _len);
 };
+
+
+
+///////////////////////// java style iterator /////////////////////////
+template <typename T>
+using DequeIterator = __container_base::_DequeIterator<T, T*, T&>;
+template <typename T>
+using DequeConstIterator =
+    __container_base::_DequeIterator<T, const T*, const T&>;
 
 
 

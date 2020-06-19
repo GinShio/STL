@@ -866,6 +866,6 @@ ForwardIt uninitialized_fill_n(ForwardIt first,
 }
 
 } // namespace stl
-} // namespace container
+} // namespace ginshio
 
 #endif // GINSHIO_STL__STL_INITIALIZED_HH_

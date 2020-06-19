@@ -333,4 +333,4 @@ void list<T, Allocator>::__copy_n(_BaseImpl& _impl, const_iterator _next,
 } // namespace stl
 } // namespace ginshio
 
-#endif // GINSHIO_STL__STL_LIST_TC_C
+#endif // GINSHIO_STL__STL_LIST_TCC_

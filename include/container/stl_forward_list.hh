@@ -237,7 +237,7 @@ struct _FwdListBase {
   static void __swap_allocator(_NodeAllocType& _a, _NodeAllocType& _b) {
     std::swap(_a, _b);
   }
-  static constexpr std::size_t __max_size() noexcept {
+  static constexpr std::size_t __max_size() const noexcept {
     return std::numeric_limits<std::ptrdiff_t>::max() / sizeof(_NodeType);
   }
   static _NodeBase* __get_before_node(_FwdListImpl& _impl, _NodeBase* _node) {
@@ -257,8 +257,7 @@ struct _FwdListBase {
   static _NodeBase* __get(_FwdListImpl& _impl, Args&&... args) {
     _NodeType* _node = _NodeAllocTraits::allocate(_impl, 1);
     try {
-      ginshio::stl::
-          construct(_node->__addr(), std::forward<Args>(args)...);
+      ginshio::stl::construct(_node->__addr(), std::forward<Args>(args)...);
     } catch (...) {
       _NodeAllocTraits::deallocate(_impl, _node, 1);
       throw;
@@ -715,6 +714,15 @@ class forward_list : protected __container_base::_FwdListBase<T, Allocator> {
   static _NodeBase* __copy_n(_BaseImpl& _impl, const_iterator _prev,
                              _InputIt _first, const size_type& _cnt);
 };
+
+
+
+///////////////////////// java style iterator /////////////////////////
+template <typename T>
+using ForwardListIterator = __container_base::_FwdListIterator<T, T*, T&>;
+template <typename T>
+using ForwardListConstIterator =
+    __container_base::_FwdListIterator<T, const T*, const T&>;
 
 
 

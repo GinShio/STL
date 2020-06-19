@@ -45,4 +45,4 @@ v.erase(v.begin() + 2, v.end());  // {1, 2}
 
 
 ## 开源协议
-[BSD](LICENSE) © GinShio
+[BSD](LICENSE) © Xin 'GinShio' Liu

@@ -102,7 +102,7 @@ struct _VectorBase {
   static void __swap_allocator(_AllocatorType& _a, _AllocatorType& _b) {
     std::swap(_a, _b);
   }
-  static constexpr std::size_t __max_size() const noexcept {
+  static constexpr std::size_t __max_size() noexcept {
     return
         static_cast<std::size_t>(std::numeric_limits<std::ptrdiff_t>::max()) /
         sizeof(_ValueType);

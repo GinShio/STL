@@ -128,7 +128,7 @@ struct _DequeIterator {
 
   /////////////// arithmetic operators ///////////////
  public:
-  _SelfIterator& operator++() {
+  _SelfIterator& operator++() noexcept {
     ++_cur;
     if (_cur == _last) {
       this->__set_node(1);
@@ -136,12 +136,12 @@ struct _DequeIterator {
     }
     return *this;
   }
-  _SelfIterator operator++(int) {
+  _SelfIterator operator++(int) noexcept {
     _SelfIterator _tmp = *this;
     this->operator++();
     return _tmp;
   }
-  _SelfIterator& operator+=(const difference_type& _n) {
+  _SelfIterator& operator+=(const difference_type& _n) noexcept {
     constexpr difference_type _chunk_cap = __deque_chunk_capacity<value_type>();
     const difference_type _offset = _n + (_cur - _first);
     if (0 <= _offset && _offset < _chunk_cap) {
@@ -155,11 +155,11 @@ struct _DequeIterator {
     }
     return *this;
   }
-  _SelfIterator operator+(const difference_type& _n) const {
+  _SelfIterator operator+(const difference_type& _n) const noexcept {
     _SelfIterator _tmp = *this;
     return _tmp += _n;
   }
-  _SelfIterator& operator--() {
+  _SelfIterator& operator--() noexcept {
     if (_cur == _first) {
       this->__set_node(-1);
       _cur = _last;
@@ -167,15 +167,15 @@ struct _DequeIterator {
     --_cur;
     return *this;
   }
-  _SelfIterator operator--(int) {
+  _SelfIterator operator--(int) noexcept {
     _SelfIterator _tmp = *this;
     this->operator--();
     return _tmp;
   }
-  _SelfIterator& operator-=(const difference_type& _n) {
+  _SelfIterator& operator-=(const difference_type& _n) noexcept {
     return this->operator+=(-_n);
   }
-  _SelfIterator operator-(const difference_type& _n) const {
+  _SelfIterator operator-(const difference_type& _n) const noexcept {
     _SelfIterator _tmp = *this;
     return _tmp += -_n;
   }
@@ -183,92 +183,98 @@ struct _DequeIterator {
 ///////////////////////// iterator comparison operator /////////////////////////
 template <typename _T, typename _Ptr, typename _Ref>
 constexpr bool operator==(const _DequeIterator<_T, _Ptr, _Ref>& _lit,
-                          const _DequeIterator<_T, _Ptr, _Ref>& _rit) {
+                          const _DequeIterator<_T, _Ptr, _Ref>& _rit) noexcept {
   return _lit._cur == _rit._cur;
 }
 template <typename _T, typename _PtrL, typename _RefL,
           typename _PtrR, typename _RefR>
-constexpr bool operator==(const _DequeIterator<_T, _PtrL, _RefL>& _lit,
-                          const _DequeIterator<_T, _PtrR, _RefR>& _rit) {
+constexpr bool operator==(
+    const _DequeIterator<_T, _PtrL, _RefL>& _lit,
+    const _DequeIterator<_T, _PtrR, _RefR>& _rit) noexcept {
   return _lit._cur == _rit._cur;
 }
 template <typename _T, typename _Ptr, typename _Ref>
 constexpr bool operator!=(const _DequeIterator<_T, _Ptr, _Ref>& _lit,
-                          const _DequeIterator<_T, _Ptr, _Ref>& _rit) {
+                          const _DequeIterator<_T, _Ptr, _Ref>& _rit) noexcept {
   return _lit._cur != _rit._cur;
 }
 template <typename _T, typename _PtrL, typename _RefL,
           typename _PtrR, typename _RefR>
-constexpr bool operator!=(const _DequeIterator<_T, _PtrL, _RefL>& _lit,
-                          const _DequeIterator<_T, _PtrR, _RefR>& _rit) {
+constexpr bool operator!=(
+    const _DequeIterator<_T, _PtrL, _RefL>& _lit,
+    const _DequeIterator<_T, _PtrR, _RefR>& _rit) noexcept {
   return _lit._cur != _rit._cur;
 }
 template <typename _T, typename _Ptr, typename _Ref>
 constexpr bool operator<(const _DequeIterator<_T, _Ptr, _Ref>& _lit,
-                         const _DequeIterator<_T, _Ptr, _Ref>& _rit) {
+                         const _DequeIterator<_T, _Ptr, _Ref>& _rit) noexcept {
   return _lit._node == _rit._node ?
       _lit._cur < _rit._cur : _lit._node < _rit._node;
 }
 template <typename _T, typename _PtrL, typename _RefL,
           typename _PtrR, typename _RefR>
-constexpr bool operator<(const _DequeIterator<_T, _PtrL, _RefL>& _lit,
-                         const _DequeIterator<_T, _PtrR, _RefR>& _rit) {
+constexpr bool operator<(
+    const _DequeIterator<_T, _PtrL, _RefL>& _lit,
+    const _DequeIterator<_T, _PtrR, _RefR>& _rit) noexcept {
   return _lit._node == _rit._node ?
       _lit._cur < _rit._cur : _lit._node < _rit._node;
 }
 template <typename _T, typename _Ptr, typename _Ref>
 constexpr bool operator>(const _DequeIterator<_T, _Ptr, _Ref>& _lit,
-                         const _DequeIterator<_T, _Ptr, _Ref>& _rit) {
+                         const _DequeIterator<_T, _Ptr, _Ref>& _rit) noexcept {
   return _lit._node == _rit._node ?
       _lit._cur > _rit._cur : _lit._node > _rit._node;
 }
 template <typename _T, typename _PtrL, typename _RefL,
           typename _PtrR, typename _RefR>
-constexpr bool operator>(const _DequeIterator<_T, _PtrL, _RefL>& _lit,
-                         const _DequeIterator<_T, _PtrR, _RefR>& _rit) {
+constexpr bool operator>(
+    const _DequeIterator<_T, _PtrL, _RefL>& _lit,
+    const _DequeIterator<_T, _PtrR, _RefR>& _rit) noexcept {
   return _lit._node == _rit._node ?
       _lit._cur > _rit._cur : _lit._node > _rit._node;
 }
 template <typename _T, typename _Ptr, typename _Ref>
 constexpr bool operator<=(const _DequeIterator<_T, _Ptr, _Ref>& _lit,
-                          const _DequeIterator<_T, _Ptr, _Ref>& _rit) {
+                          const _DequeIterator<_T, _Ptr, _Ref>& _rit) noexcept {
   return !operator<(_rit, _lit);
 }
 template <typename _T, typename _PtrL, typename _RefL,
           typename _PtrR, typename _RefR>
-constexpr bool operator<=(const _DequeIterator<_T, _PtrL, _RefL>& _lit,
-                          const _DequeIterator<_T, _PtrR, _RefR>& _rit) {
+constexpr bool operator<=(
+    const _DequeIterator<_T, _PtrL, _RefL>& _lit,
+    const _DequeIterator<_T, _PtrR, _RefR>& _rit) noexcept {
   return !operator<(_rit, _lit);
 }
 template <typename _T, typename _Ptr, typename _Ref>
 constexpr bool operator>=(const _DequeIterator<_T, _Ptr, _Ref>& _lit,
-                          const _DequeIterator<_T, _Ptr, _Ref>& _rit) {
+                          const _DequeIterator<_T, _Ptr, _Ref>& _rit) noexcept {
   return !operator<(_lit, _rit);
 }
 template <typename _T, typename _PtrL, typename _RefL,
           typename _PtrR, typename _RefR>
-constexpr bool operator>=(const _DequeIterator<_T, _PtrL, _RefL>& _lit,
-                          const _DequeIterator<_T, _PtrR, _RefR>& _rit) {
+constexpr bool operator>=(
+    const _DequeIterator<_T, _PtrL, _RefL>& _lit,
+    const _DequeIterator<_T, _PtrR, _RefR>& _rit) noexcept {
   return !operator<(_lit, _rit);
 }
 ///////////////////////// iterator arithmetic operator /////////////////////////
 template <typename _T, typename _Ptr, typename _Ref>
-constexpr auto operator+(const typename _DequeIterator<_T, _Ptr, _Ref>::
-                         difference_type& _n,
-                         const _DequeIterator<_T, _Ptr, _Ref> _it)
+constexpr auto operator+(
+    const typename _DequeIterator<_T, _Ptr, _Ref>::difference_type _n,
+    const _DequeIterator<_T, _Ptr, _Ref>& _it) noexcept
     -> _DequeIterator<_T, _Ptr, _Ref> {
   return _it.operator+(_n);
 }
 template <typename _T, typename _Ptr, typename _Ref>
-constexpr auto operator-(const typename _DequeIterator<_T, _Ptr, _Ref>::
-                         difference_type& _n,
-                         const _DequeIterator<_T, _Ptr, _Ref> _it)
+constexpr auto operator-(
+    const typename _DequeIterator<_T, _Ptr, _Ref>::difference_type _n,
+    const _DequeIterator<_T, _Ptr, _Ref>& _it) noexcept
     -> _DequeIterator<_T, _Ptr, _Ref> {
   return _it.operator-(_n);
 }
 template <typename _T, typename _Ptr, typename _Ref>
 constexpr auto operator-(const _DequeIterator<_T, _Ptr, _Ref>& _lit,
-                         const _DequeIterator<_T, _Ptr, _Ref>& _rit)
+                         const _DequeIterator<_T, _Ptr, _Ref>& _rit) noexcept
     -> typename _DequeIterator<_T, _Ptr, _Ref>::difference_type {
   return _lit._node == _rit._node ? _lit._cur - _rit._cur :
       (__deque_chunk_capacity<_T>() * (_lit._node - _rit._node - 1) +
@@ -277,7 +283,7 @@ constexpr auto operator-(const _DequeIterator<_T, _Ptr, _Ref>& _lit,
 template <typename _T, typename _PtrL, typename _RefL,
           typename _PtrR, typename _RefR>
 constexpr auto operator-(const _DequeIterator<_T, _PtrL, _RefL>& _lit,
-                         const _DequeIterator<_T, _PtrR, _RefR>& _rit)
+                         const _DequeIterator<_T, _PtrR, _RefR>& _rit) noexcept
     -> typename _DequeIterator<_T, _PtrL, _RefR>::difference_type {
   return _lit._node == _rit._node ? _lit._cur - _rit._cur :
       (__deque_chunk_capacity<_T>() * (_lit._node - _rit._node - 1) +
@@ -350,7 +356,7 @@ struct _DequeBase {
   static void __swap_allocator(_DataAllocType& _a, _DataAllocType& _b) {
     return std::swap(_a, _b);
   }
-  static constexpr std::size_t __max_size() const noexcept {
+  static constexpr std::size_t __max_size() noexcept {
     return
         static_cast<std::size_t>(std::numeric_limits<std::ptrdiff_t>::max()) /
         sizeof(_ValueType);

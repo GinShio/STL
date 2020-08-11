@@ -206,7 +206,7 @@ auto to_array(T (&&a)[N]) -> array<typename std::remove_cv<T>::type, N> {
   }
   return arr;
 }
-#endif // end: __cplusplus > 201402L
+#endif // __cplusplus > 201402L
 
 
 

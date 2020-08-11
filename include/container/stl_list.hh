@@ -194,25 +194,29 @@ struct _ListIterator {
 };
 ///////////////////////// iterator comparison operator /////////////////////////
 template <typename _T, typename _Ptr, typename _Ref>
-constexpr bool operator==(const _ListIterator<_T, _Ptr, _Ref>& _lit,
-                          const _ListIterator<_T, _Ptr, _Ref>& _rit) {
+constexpr bool operator==(
+    const _ListIterator<_T, _Ptr, _Ref>& _lit,
+    const _ListIterator<_T, _Ptr, _Ref>& _rit) noexcept {
   return _lit._node == _rit._node;
 }
 template <typename _T, typename _PtrL, typename _RefL,
           typename _PtrR, typename _RefR>
-constexpr bool operator==(const _ListIterator<_T, _PtrL, _RefL>& _lit,
-                          const _ListIterator<_T, _PtrR, _RefR>& _rit) {
+constexpr bool operator==(
+    const _ListIterator<_T, _PtrL, _RefL>& _lit,
+    const _ListIterator<_T, _PtrR, _RefR>& _rit) noexcept {
   return _lit._node == _rit._node;
 }
 template <typename _T, typename _Ptr, typename _Ref>
-constexpr bool operator!=(const _ListIterator<_T, _Ptr, _Ref>& _lit,
-                          const _ListIterator<_T, _Ptr, _Ref>& _rit) {
+constexpr bool operator!=(
+    const _ListIterator<_T, _Ptr, _Ref>& _lit,
+    const _ListIterator<_T, _Ptr, _Ref>& _rit) noexcept {
   return _lit._node != _rit._node;
 }
 template <typename _T, typename _PtrL, typename _RefL,
           typename _PtrR, typename _RefR>
-constexpr bool operator!=(const _ListIterator<_T, _PtrL, _RefL>& _lit,
-                          const _ListIterator<_T, _PtrR, _RefR>& _rit) {
+constexpr bool operator!=(
+    const _ListIterator<_T, _PtrL, _RefL>& _lit,
+    const _ListIterator<_T, _PtrR, _RefR>& _rit) noexcept {
   return _lit._node != _rit._node;
 }
 
@@ -279,7 +283,7 @@ struct _ListBase {
   static void __swap_allocator(_NodeAllocType& _a, _NodeAllocType& _b) {
     std::swap(_a, _b);
   }
-  static constexpr std::size_t __max_size() const noexcept {
+  static constexpr std::size_t __max_size() noexcept {
     return std::numeric_limits<std::ptrdiff_t>::max() / sizeof(_NodeType);
   }
 

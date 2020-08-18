@@ -1,19 +1,24 @@
-/*
- * include/base/stl_tree_algo.hh
- *
- * author:  GinShio <ginshio78@gmail.com>
- *
- * date:    2020-08-08 22:17:45
- *
- * details: tree base algorithms
- */
+#ifndef GINSHIO_STL__STL_TREE_ALGO_HH_
+#define GINSHIO_STL__STL_TREE_ALGO_HH_ 1
 
-#ifndef STL_INCLUDE_BASE_STL_TREE_ALGO_HH_
-#define STL_INCLUDE_BASE_STL_TREE_ALGO_HH_
+#include <cstddef>
 
 namespace ginshio {
 namespace stl {
 namespace tree {
+/////////////// pair ///////////////
+template <typename T, typename U>
+struct tree_pair {
+  T first;
+  U second;
+  operator T() const { return first; }
+};
+template <typename T, typename U>
+bool operator<(const tree_pair<T, U>& l, const tree_pair<T, U>& r) {
+  return l.first < r.first;
+}
+
+
 /////////////// tag ///////////////
 enum class _NodeTag : char {HEADER = 0, NODE};
 #define _RBTreeColor ginshio::stl::tree::_NodeTag
@@ -42,6 +47,37 @@ inline TreeNode* __get_sibling(const TreeNode*& _node) {
   }
   return _node == _node->_parent->_left ?
       _node->_parent->_right : _node->_parent->_left;
+}
+template <typename TreeNode>
+TreeNode* __get_rightmost(const TreeNode* _root) {
+  if (_root == nullptr) {
+    return nullptr;
+  }
+  while (_root->_right) {
+    _root = _root->_right;
+  }
+  return _root;
+}
+template <typename TreeNode>
+TreeNode* __get_leftmost(const TreeNode* _root) {
+  if (_root == nullptr) {
+    return nullptr;
+  }
+  while (_root->_left) {
+    _root = _root->_left;
+  }
+  return _root;
+}
+
+
+
+/////////////// size ///////////////
+template <typename TreeNode>
+std::size_t __get_size(TreeNode* _node) {
+  if (_node == nullptr) {
+    return 0;
+  }
+  return __get_size(_node->_left) + __get_size(_node->_right) + 1;
 }
 
 
@@ -118,24 +154,6 @@ void __rotate_right(TreeNode* _p, TreeNode*& _root) {
 
 
 
-/////////////// maxi && mini ///////////////
-template <typename TreeNode>
-TreeNode* __node_maximum(const TreeNode* _root) {
-  while (_root->_right) {
-    _root = _root->_right;
-  }
-  return _root;
-}
-template <typename TreeNode>
-TreeNode* __node_minimum(const TreeNode* _root) {
-  while (_root->_left) {
-    _root = _root->_left;
-  }
-  return _root;
-}
-
-
-
 /////////////// incr && decr ///////////////
 template <typename TreeNode>
 TreeNode* __node_increment(TreeNode* _node) {
@@ -160,24 +178,25 @@ template <typename TreeNode>
 TreeNode* __node_decrement(TreeNode* _node) {
   if (_node->_tag == _NodeTag::HEADER && _node->_parent->_parent == _node) {
     return _node->_right;
-  } else if (_node->left) {
+  }
+  if (_node->left) {
     _node = _node->_left;
     while (_node->_right) {
       _node = _node->_right;
     }
-    return _node;
   } else {
     TreeNode* _pa = _node->_parent;
     while (_node == _pa->_left) {
       _node = _pa;
       _pa = _pa->_parent;
     }
-    return _pa;
+    _node = _pa;
   }
+  return _node;
 }
 
 } // namespace tree
 } // namespace stl
 } // namespace ginshio
 
-#endif // STL_INCLUDE_BASE_STL_TREE_ALGO_HH_
+#endif // GINSHIO_STL__STL_TREE_ALGO_HH_

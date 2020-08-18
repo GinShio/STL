@@ -10,6 +10,7 @@
 #include <utility>
 
 #include <cstddef>
+#include <cstdlib>
 
 namespace ginshio {
 namespace stl {
@@ -23,6 +24,15 @@ struct _RBTreeNodeBase {
   _RBTreeNodeBase* _parent;
   _RBTreeNodeBase() : _tag(_RBTreeColor_RED),
                       _left(nullptr), _right(nullptr), _parent(nullptr) {}
+  /////////////// insert ///////////////
+  void set_left(_RBTreeNodeBase* _node) {
+    _node->_parent = this;
+    this->_left = _node;
+  }
+  void set_right(_RBTreeNodeBase* _node) {
+    _node->_parent = this;
+    this->_right = _node;
+  }
   /////////////// color ///////////////
   constexpr const bool is_black() const {
     return this->_tag == _RBTreeColor_BLACK;
@@ -239,18 +249,27 @@ struct _RBTreeBase {
   /////////////// utils function ///////////////
  protected:
   static void __clear_aux(_RBTreeImpl& _impl, _NodeBase* _node) {
-    if (!_node || _node == _impl._header._nil) {
+    if (!_node || _node == nullptr) {
       return;
     }
-    _RBTreeBase::__clear_aux(_impl, _node->_left);
-    _RBTreeBase::__clear_aux(_impl, _node->_right);
-    _RBTreeBase::__put(_impl, static_cast<_NodeType*>(_node));
+    _NodeBase* _cur = _node;
+    _NodeBase* _pre = nullptr;
+    _NodeBase* _leftmost = _impl._header._left;
+    while (_cur != nullptr) {
+      _pre = _cur;
+      if (_cur->_right != nullptr) {
+        _leftmost->_left = _cur->_right;
+        _leftmost = tree::__node_leftmost(_leftmost);
+      }
+      _cur = _cur->_left;
+      _RBTreeBase::__put(_impl, static_cast<_NodeType*>(_pre));
+    }
   }
   static void __clear(_RBTreeImpl& _impl) {
     if (_impl._header._size == 0) {
       return;
     }
-    _RBTreeBase::__clear_aux(_impl, _impl._header._root);
+    _RBTreeBase::__clear_aux(_impl, _impl._header._parent);
     _impl._header._init_default();
   }
   static void __swap_allocator(_NodeAllocType& _a, _NodeAllocType& _b) {
@@ -311,6 +330,7 @@ class rb_tree : protected __container_base::_RBTreeBase<T, Allocator> {
   using const_iterator = typename _Base::_ConstIterator;
   using reverse_iterator = std::reverse_iterator<iterator>;
   using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+  using node_type = typename _Base::_NodeType*;
 
   /////////////// data member ///////////////
  private:
@@ -416,6 +436,83 @@ class rb_tree : protected __container_base::_RBTreeBase<T, Allocator> {
   std::pair<iterator, bool> insert_unique(value_type&& value) {
     return this->emplace_unique(std::forward<value_type>(value));
   }
+  template <typename... Args>
+  iterator emplace_equal(Args&&... args) {
+    _NodeBase* _node = _Base::__get(_impl, std::forward<Args>(args)...);
+    __set_insert_equal_pos(_node, static_cast<_NodeBase*>(&_impl._header));
+    __insert_rebalance(_node, static_cast<_NodeBase*>(&_impl._header));
+    ++_impl._header._size;
+    return iterator(_node);
+  }
+  template <typename... Args>
+  std::pair<iterator, bool> emplace_unique(Args&&... args) {
+    _NodeBase* _node = _Base::__get(_impl, std::forward<Args>(args)...);
+    if (__set_insert_unique_pos(_node,
+                                static_cast<_NodeBase*>(&_impl._header))) {
+      __insert_rebalance(_node, static_cast<_NodeBase*>(&_impl._header));
+      ++_impl._header._size;
+      return {iterator(_node), true};
+    }
+    return {iterator(_node), false};
+  }
+  iterator insert_hint_equal(const_iterator hint, const value_type& value) {
+    return this->emplace_hint_equal(hint, value);
+  }
+  iterator insert_hint_equal(const_iterator hint, value_type&& value) {
+    return this->emplace_hint_equal(hint, std::forward(value));
+  }
+  std::pair<iterator, bool> insert_hint_unique(const_iterator hint,
+                                               const value_type& value) {
+    return this->emplace_hint_unique(hint, value);
+  }
+  std::pair<iterator, bool> insert_hint_unique(const_iterator hint,
+                                               value_type&& value) {
+    return this->emplace_hint_unique(hint, std::forward(value));
+  }
+  template <typename... Args>
+  iterator emplace_hint_equal(const_iterator hint, Args&&... args) {
+    _NodeBase* _node = _Base::__get(_impl, std::forward<Args>(args)...);
+    __set_insert_hint_equal_pos(hint._node, _node,
+                                static_cast<_NodeBase*>(&_impl._header));
+    __insert_rebalance(_node, static_cast<_NodeBase*>(&_impl._header));
+    ++_impl._header._size;
+    return iterator(_node);
+  }
+  template <typename... Args>
+  std::pair<iterator, bool> emplace_hint_unique(const_iterator hint,
+                                                Args&&... args) {
+    _NodeBase* _node = _Base::__get(_impl, std::forward<Args>(args)...);
+    if (__set_insert_hint_unique_pos(hint._node, _node,
+                                     static_cast<_NodeBase*>(&_impl._header))) {
+      __insert_rebalance();
+      ++_impl._header._size;
+      return {iterator(_node), true};
+    }
+    return {iterator(_node), false};
+  }
+  void merge_equal(rb_tree& other) {
+    merge_equal(std::move(other));
+  }
+  void merge_equal(rb_tree&& other) {
+    for (auto _it = other._impl._header._left,
+         _end = static_cast<_NodeBase*>(&other._impl._header);
+         _it != _end; tree::__node_increment(_it)) {
+      __set_insert_equal_pos(_it, _end);
+      __insert_rebalance(_it, _end);
+    }
+  }
+  void merge_unique(rb_tree& other) {
+    merge_unique(std::move(other));
+  }
+  void merge_unique(rb_tree&& other) {
+    for (auto _it = other._impl._header._left,
+         _end = static_cast<_NodeBase*>(&other._impl._header);
+         _it != _end; tree::__node_increment(_it)) {
+      if (__set_insert_unique_pos(_it, _end)) {
+        __insert_rebalance(_it, _end);
+      }
+    }
+  }
   void swap(rb_tree& other)
       noexcept(_NodeAllocTraits::propagate_on_container_swap::value ||
                _NodeAllocTraits::is_always_equal::value) {
@@ -426,71 +523,135 @@ class rb_tree : protected __container_base::_RBTreeBase<T, Allocator> {
     _impl.__swap(other._impl);
   }
 
-  /////////////// TODO: insert ///////////////
- public:
-  template <typename... Args>
-  iterator emplace_equal(Args&&... args) {
-    _NodeBase* _pa = _impl._header._parent;
-    _NodeBase* _node;
-    if (!_pa) {
-      _node = _Base::__get(_impl, std::forward<Args>(args)...);
-      _impl._header._parent =
-          _impl._header._left = _impl._header._right = _node;
-      _node->_parent = _pa;
-      _node->_tag = _RBTreeColor_BLACK;
-    } else {
-      _NodeBase** _tmp;
-      auto _val = value_type(std::forward<Args>(args)...);
-      do {
-        _tmp = _val < static_cast<_NodeType*>(_pa)->_data ?
-               &_pa->_left : &_pa->_right;
-      } while (*_tmp && (_pa = *_tmp));
-      _node = _Base::__get(_impl, std::move(_val));
-      _node->_parent = _pa;
-      *_tmp = _node;
-      __insert(_node, static_cast<_NodeBase*>(&_impl._header));
-    }
-    ++_impl._header._size;
-    return iterator(_node);
-  }
-  template <typename... Args>
-  std::pair<iterator, bool> emplace_unique(Args&&... args) {
-    _NodeBase* _pa = _impl._header._parent;
-    _NodeBase* _node;
-    if (!_pa) {
-      _node = _Base::__get(_impl, std::forward<Args>(args)...);
-      _impl._header._parent =
-          _impl._header._left = _impl._header._right = _node;
-      _node->_parent = _pa;
-      _node->_tag = _RBTreeColor_BLACK;
-    } else {
-      _NodeBase** _tmp;
-      auto _val = value_type(std::forward<Args>(args)...);
-      do {
-        _tmp = _val < static_cast<_NodeType*>(_pa)->_data ?
-               &_pa->_left : &_pa->_right;
-      } while (*_tmp && (_pa = *_tmp));
-      if (_tmp == &_pa->_left && _pa != _impl._header._left) {
-        auto _it = --iterator(_pa);
-        if (!(static_cast<_NodeType*>(_it._node)->_data < _val)) {
-          return {_it, false};
-        }
-      }
-      _node = _Base::__get(_impl, std::move(_val));
-      _node->_parent = _pa;
-      *_tmp = _node;
-      __insert(_node, static_cast<_NodeBase*>(&_impl._header));
-    }
-    ++_impl._header._size;
-    return {iterator(_node), true};
-  }
+  /////////////// insert ///////////////
  private:
-  static void __insert(_NodeBase* _node, _NodeBase* _header) {
-    if (tree::__is_left(_node) & (_header->_left == _node->_parent)) {
+  static void __set_insert_equal_pos(_NodeBase*& _node, _NodeBase*& _header) {
+    _NodeBase* _pa = _header;
+    _NodeBase** _tmp = &_pa->_parent;
+    value_type& _val = static_cast<_NodeType*>(_node)->_data;
+    while (*_tmp && (_pa = *_tmp)) {
+      _tmp = _val < static_cast<_NodeType*>(_pa)->_data ?
+             &_pa->_left : &_pa->_right;
+    }
+    _node->_parent = _pa;
+    *_tmp = _node;
+    if (_pa == _header) {
+      _header->_left = _header->_right = _node;
+      return;
+    }
+    if (_pa == _header->_left && _pa->_left == _node) {
       _header->_left = _node;
-    } else if (tree::__is_right(_node) & (_header->_right == _node->_parent)) {
+    } else if (_pa == _header->_right && _pa->_right == _node) {
       _header->_right = _node;
     }
+  }
+  static bool __set_insert_unique_pos(_NodeBase*& _node, _NodeBase*& _header) {
+    _NodeBase* _pa = _header;
+    _NodeBase** _tmp = &_pa->_parent;
+    value_type& _val = static_cast<_NodeType*>(_node)->_data;
+    while (*_tmp && (_pa = *_tmp)) {
+      _tmp = _val < static_cast<_NodeType*>(_pa)->_data ?
+             &_pa->_left : &_pa->_right;
+    }
+    if (_tmp == &_pa->_left && _pa != _header->_left) {
+      auto _it = --iterator(_pa);
+      if (!(*_it < static_cast<_NodeType*>(_node)->_data)) {
+        _Base::__put(_impl, static_cast<_NodeType*>(_node));
+        _node = _it._node;
+        return false;
+      }
+    }
+    _node->_parent = _pa;
+    *_tmp = _node;
+    if (_pa == _header) {
+      _header->_left = _header->_right = _node;
+      return true;
+    }
+    if (_pa == _header->_left && _pa->_left == _node) {
+      _header->_left = _node;
+    } else if (_pa == _header->_right && _pa->_right == _node) {
+      _header->_right = _node;
+    }
+    return true;
+  }
+  static void __set_insert_hint_equal_pos(_NodeBase*& _pos, _NodeBase*& _node,
+                                          _NodeBase*& _header) {
+    value_type& _val = static_cast<_NodeType*>(_node)->_data;
+    if (_pos == _header) {
+      if (_header->_parent &&
+          !(_val < static_cast<_NodeType*>(_header->_right)->_data)) {
+        return __set_rightmost(_header, _node);
+      } else {
+        return __set_insert_equal_pos(_node, _header);
+      }
+    } else if (!(static_cast<_NodeType*>(_pos)->_data < _val)) {
+      if (_pos == _header->_left) {
+        return __set_leftmost(_header, _node);
+      }
+      auto _it = --iterator(_pos);
+      if (!(_val < *_it)) {
+        return _it._node->_right == nullptr ?
+            _it._node->set_right(_node) : _pos->set_left(_node);
+      } else {
+        return __set_insert_equal_pos(_node, _header);
+      }
+    } else {
+      if (_pos == _header->_right) {
+        return __set_rightmost(_header, _node);
+      }
+      auto _it = ++iterator(_pos);
+      if (!(*_it < _val)) {
+        return _it._node->_left == nullptr ?
+            _it._node->set_left(_node) : _pos->set_right(_node);
+      } else {
+        return __set_insert_equal_pos(_node, _header);
+      }
+    }
+  }
+  static bool __set_insert_hint_unique_pos(_NodeBase*& _pos, _NodeBase*& _node,
+                                           _NodeBase*& _header) {
+    value_type& _val = static_cast<_NodeType*>(_node)->_data;
+    if (_pos == _header) {
+      if (_header->_parent &&
+          static_cast<_NodeType*>(_header->_right)->_data < _val) {
+        __set_rightmost(_header, _node);
+        return true;
+      } else {
+        return __set_insert_unique_pos(_node, _header);
+      }
+    } else if (_val < static_cast<_NodeType*>(_pos)->_data) {
+      if (_pos == _header->_left) {
+        __set_leftmost(_header, _node);
+        return true;
+      }
+      auto _it = --iterator(_pos);
+      if (*_it < _val) {
+        _it._node->_right == nullptr ?
+            _it._node->set_right(_node) : _pos->set_left(_node);
+        return true;
+      } else {
+        return __set_insert_unique_pos(_node, _header);
+      }
+    } else if (static_cast<_NodeType*>(_pos)->_data < _val) {
+      if (_pos == _header->_right) {
+        __set_rightmost(_header, _node);
+        return true;
+      }
+      auto _it = ++iterator(_pos);
+      if (_val < *_it) {
+        _it._node->_left == nullptr ?
+            _it._node->set_left(_node) : _pos->set_right(_node);
+        return true;
+      } else {
+        return __set_insert_unique_pos(_node, _header);
+      }
+    } else {
+      _Base::__put(_impl, static_cast<_NodeType*>(_node));
+      _node = _pos;
+      return false;
+    }
+  }
+  static void __insert_rebalance(_NodeBase* _node, _NodeBase*& _header) {
     _NodeBase* _uncle,* _gp;
     while (_node != _header->_parent &&
            _node->_parent->_tag == _RBTreeColor_RED) {
@@ -526,7 +687,147 @@ class rb_tree : protected __container_base::_RBTreeBase<T, Allocator> {
 
   /////////////// TODO: erase ///////////////
  public:
+  iterator erase(const_iterator pos) {
+    // TODO
+  }
+  iterator erase(const_iterator first, const_iterator last) {
+    // TODO
+  }
+  template <typename Key>
+  size_type erase(const Key& key) {
+    // TODO
+  }
  private:
+  static void __delete_rebalance(_NodeBase* _node, _NodeBase*& _header) {}
+
+  /////////////// find ///////////////
+ public:
+  template <typename Key>
+  size_type count(const Key& key) const {
+    std::pair<const_iterator, const_iterator> _pair = equal_range(key);
+    return static_cast<size_type>(std::distance(_pair.first, _pair.second));
+  }
+  template <typename Key>
+  std::pair<iterator, iterator> equal_range(const Key& key) {
+    iterator _begin = find(key);
+    if (_begin._node == static_cast<_NodeBase*>(&_impl._header)) {
+      return {_begin, _begin};
+    }
+    return {iterator(__lower_bound(_begin._node->_left, _begin._node, key)),
+            iterator(__upper_bound(_begin._node->_right, _begin._node, key))};
+  }
+  template <typename Key>
+  std::pair<const_iterator, const_iterator> equal_range(const Key& key) const {
+    const_iterator _begin = find(key);
+    if (_begin._node == static_cast<_NodeBase*>(&_impl._header)) {
+      return {_begin, _begin};
+    }
+    return {const_iterator(__lower_bound(_begin._node->_left,
+                                         _begin._node, key)),
+            const_iterator(__upper_bound(_begin._node->_right,
+                                         _begin._node, key))};
+  }
+  template <typename Key>
+  iterator find(const Key& key) {
+    _NodeBase* _begin = _impl._header._parent;
+    _NodeBase* _end = static_cast<_NodeBase*>(&_impl._header);
+    while (_begin != nullptr) {
+      if (static_cast<_NodeType*>(_begin)->_data < key) {
+        _end = _begin;
+        _begin = _begin->_right;
+      } else if (key < static_cast<_NodeType*>(_begin)->_data) {
+        _end = _begin;
+        _begin = _begin->_left;
+      } else {
+        break;
+      }
+    }
+    return iterator(_end);
+  }
+  template <typename Key>
+  const_iterator find(const Key& key) const {
+    _NodeBase* _begin = _impl._header._parent;
+    _NodeBase* _end = static_cast<_NodeBase*>(&_impl._header);
+    while (_begin != nullptr) {
+      if (static_cast<_NodeType*>(_begin)->_data < key) {
+        _end = _begin;
+        _begin = _begin->_right;
+      } else if (key < static_cast<_NodeType*>(_begin)->_data) {
+        _end = _begin;
+        _begin = _begin->_left;
+      } else {
+        break;
+      }
+    }
+    _begin == nullptr ?
+        const_iterator(static_cast<_NodeBase*>(&_impl._header)) :
+        const_iterator(_end);
+  }
+  tempalte <typename Key>
+  iterator lower_bound(const Key& key) {
+    return iterator(__lower_bound(_impl._header._parent,
+                                  static_cast<_NodeBase*>(&_impl._header),
+                                  key));
+  }
+  tempalte <typename Key>
+  const_iterator lower_bound(const Key& key) const {
+    return const_iterator(__lower_bound(_impl._header._parent,
+                                        static_cast<_NodeBase*>(&_impl._header),
+                                        key));
+  }
+  tempalte <typename Key>
+  iterator upper_bound(const Key& key) {
+    return iterator(__upper_bound(_impl._header._parent,
+                                  static_cast<_NodeBase*>(&_impl._header),
+                                  key));
+  }
+  tempalte <typename Key>
+  const_iterator upper_bound(const Key& key) const {
+    return const_iterator(__upper_bound(_impl._header._parent,
+                                        static_cast<_NodeBase*>(&_impl._header),
+                                        key));
+  }
+
+  /////////////// lower_bound & upper_bound ///////////////
+  tempalte <typename Key>
+  static _NodeBase* __lower_bound(const _NodeBase* _cur, const _NodeBase* _pa,
+                                  const Key& key) const {
+    while (_cur != nullptr) {
+      if (!(static_cast<const _NodeType*>(_cur)->_data < key)) {
+        _pa = _cur;
+        _cur = _cur->_left;
+      } else {
+        _cur = _cur->_right;
+      }
+    }
+    return const_cast<_NodeBase*>(_pa);
+  }
+  tempalte <typename Key>
+  static _NodeBase* __upper_bound(const _NodeBase* _cur, const _NodeBase* _pa,
+                                  const Key& key) const {
+    while (_cur != nullptr) {
+      if (key < static_cast<const _NodeType*>(_cur)->_data) {
+        _pa = _cur;
+        _cur = _cur->_left;
+      } else {
+        _cur = _cur->_right;
+      }
+    }
+    return const_cast<_NodeBase*>(_pa);
+  }
+
+  /////////////// leftmost & rightmost ///////////////
+ private:
+  static void __set_leftmost(_NodeBase* _header, _NodeBase* _node) {
+    _header->_left->_left = _node;
+    _node->_parent = _header->_left;
+    _header->_left = _node;
+  }
+  static void __set_rightmost(_NodeBase* _header, _NodeBase* _node) {
+    _header->_right->_right = _node;
+    _node->_parent = _header->_right;
+    _header->_right = _node;
+  }
 };
 
 } // namespace stl

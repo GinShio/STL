@@ -26,6 +26,7 @@ v.erase(v.begin() + 2, v.end());  // {1, 2}
  - [libc++](https://libcxx.llvm.org/docs/index.html)
  - [STLport](http://www.stlport.org/)
  - [Qt Container](https://doc.qt.io/qt-5/containers.html)
+ - [EASTL](https://github.com/electronicarts/EASTL)
 
 
 ## TODO
@@ -37,7 +38,9 @@ v.erase(v.begin() + 2, v.end());  // {1, 2}
   - 分配器
   - 迭代器
   - 算法
-  - 完善的 **TestCase** 和 **doc**
+  - 完善的 **TestCase** 、 **Benchmark** 和 **Document**
+  - 禁止异常
+  - 修改为 pmr(polymorphic) 分配器
 
 
 ## 参与贡献方式

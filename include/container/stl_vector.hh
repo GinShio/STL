@@ -560,7 +560,7 @@ template <typename T, typename Allocator>
 constexpr bool operator!=(const vector<T, Allocator>& lhs,
                           const vector<T, Allocator>& rhs) {
   return &lhs != &rhs && (lhs.size() != rhs.size() ||
-                          std::equal(lhs.begin(), lhs.end(), rhs.begin()));
+                          !std::equal(lhs.begin(), lhs.end(), rhs.begin()));
 }
 template <typename T, typename Allocator>
 constexpr bool operator<(const vector<T, Allocator>& lhs,

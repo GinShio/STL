@@ -1,16 +1,31 @@
+/*
+ *
+ * Copyright (c) 1994
+ * Hewlett-Packard Company
+ *
+ * Permission to use, copy, modify, distribute and sell this software
+ * and its documentation for any purpose is hereby granted without fee,
+ * provided that the above copyright notice appear in all copies and
+ * that both that copyright notice and this permission notice appear
+ * in supporting documentation.  Hewlett-Packard Company makes no
+ * representations about the suitability of this software for any
+ * purpose.  It is provided "as is" without express or implied warranty.
+ *
+ *
+ * Copyright (c) 1996
+ * Silicon Graphics Computer Systems, Inc.
+ *
+ * Permission to use, copy, modify, distribute and sell this software
+ * and its documentation for any purpose is hereby granted without fee,
+ * provided that the above copyright notice appear in all copies and
+ * that both that copyright notice and this permission notice appear
+ * in supporting documentation.  Silicon Graphics makes no
+ * representations about the suitability of this  software for any
+ * purpose.  It is provided "as is" without express or implied warranty.
+ */
+
 #ifndef GINSHIO_STL__STL_RB_TREE_HH_
 #define GINSHIO_STL__STL_RB_TREE_HH_ 1
-
-#include "base/stl_init.hh"
-#include "base/stl_tree_algo.hh"
-
-#include <initializer_list>
-#include <limits>
-#include <memory>
-#include <utility>
-
-#include <cstddef>
-#include <cstdlib>
 
 namespace ginshio {
 namespace stl {
@@ -490,6 +505,7 @@ class rb_tree : protected __container_base::_RBTreeBase<T, Allocator> {
     }
     return {iterator(_node), false};
   }
+  // TODO: merge (from other tree, e.g. avl_tree)
   void merge_equal(rb_tree& other) {
     merge_equal(std::move(other));
   }
@@ -708,26 +724,6 @@ class rb_tree : protected __container_base::_RBTreeBase<T, Allocator> {
     return static_cast<size_type>(std::distance(_pair.first, _pair.second));
   }
   template <typename Key>
-  std::pair<iterator, iterator> equal_range(const Key& key) {
-    iterator _begin = find(key);
-    if (_begin._node == static_cast<_NodeBase*>(&_impl._header)) {
-      return {_begin, _begin};
-    }
-    return {iterator(__lower_bound(_begin._node->_left, _begin._node, key)),
-            iterator(__upper_bound(_begin._node->_right, _begin._node, key))};
-  }
-  template <typename Key>
-  std::pair<const_iterator, const_iterator> equal_range(const Key& key) const {
-    const_iterator _begin = find(key);
-    if (_begin._node == static_cast<_NodeBase*>(&_impl._header)) {
-      return {_begin, _begin};
-    }
-    return {const_iterator(__lower_bound(_begin._node->_left,
-                                         _begin._node, key)),
-            const_iterator(__upper_bound(_begin._node->_right,
-                                         _begin._node, key))};
-  }
-  template <typename Key>
   iterator find(const Key& key) {
     _NodeBase* _begin = _impl._header._parent;
     _NodeBase* _end = static_cast<_NodeBase*>(&_impl._header);
@@ -762,6 +758,26 @@ class rb_tree : protected __container_base::_RBTreeBase<T, Allocator> {
     _begin == nullptr ?
         const_iterator(static_cast<_NodeBase*>(&_impl._header)) :
         const_iterator(_end);
+  }
+  template <typename Key>
+  std::pair<iterator, iterator> equal_range(const Key& key) {
+    iterator _begin = find(key);
+    if (_begin._node == static_cast<_NodeBase*>(&_impl._header)) {
+      return {_begin, _begin};
+    }
+    return {iterator(__lower_bound(_begin._node->_left, _begin._node, key)),
+            iterator(__upper_bound(_begin._node->_right, _begin._node, key))};
+  }
+  template <typename Key>
+  std::pair<const_iterator, const_iterator> equal_range(const Key& key) const {
+    const_iterator _begin = find(key);
+    if (_begin._node == static_cast<_NodeBase*>(&_impl._header)) {
+      return {_begin, _begin};
+    }
+    return {const_iterator(__lower_bound(_begin._node->_left,
+                                         _begin._node, key)),
+            const_iterator(__upper_bound(_begin._node->_right,
+                                         _begin._node, key))};
   }
   tempalte <typename Key>
   iterator lower_bound(const Key& key) {
@@ -830,7 +846,79 @@ class rb_tree : protected __container_base::_RBTreeBase<T, Allocator> {
   }
 };
 
+
+
+///////////////////////// java style iterator /////////////////////////
+template <typename T>
+using RBTreeIterator = __container_base::_RBTreeIterator<T, T*, T&>;
+template <typename T>
+using RBTreeConstIterator =
+    __container_base::_RBTreeIterator<T, const T*, const T&>;
+
+
+
+///////////////////////// rb_tree comparison operators /////////////////////////
+template <typename T, typename Allocator>
+constexpr bool operator==(const rb_tree<T, Allocator>& lhs,
+                          const rb_tree<T, Allocator>& rhs) {
+  return &lhs == &rhs || (lhs.size() == rhs.size() &&
+                          std::equal(lhs.begin(), lhs.end(), rhs.begin()));
+}
+template <typename T, typename Allocator>
+constexpr bool operator!=(const rb_tree<T, Allocator>& lhs,
+                          const rb_tree<T, Allocator>& rhs) {
+  return &lhs != &rhs && (lhs.size() != rhs.size() ||
+                          !std::equal(lhs.begin(), lhs.end(), rhs.begin()));
+}
+template <typename T, typename Allocator>
+constexpr bool operator<(const rb_tree<T, Allocator>& lhs,
+                         const rb_tree<T, Allocator>& rhs) {
+  return std::lexicographical_compare(lhs.begin(), lhs.end(),
+                                      rhs.begin(), rhs.end());
+}
+template <typename T, typename Allocator>
+constexpr bool operator>(const rb_tree<T, Allocator>& lhs,
+                         const rb_tree<T, Allocator>& rhs) {
+  return std::lexicographical_compare(rhs.begin(), rhs.end(),
+                                      lhs.begin(), lhs.end());
+}
+template <typename T, typename Allocator>
+constexpr bool operator<=(const rb_tree<T, Allocator>& lhs,
+                          const rb_tree<T, Allocator>& rhs) {
+  return !operator<(rhs, lhs);
+}
+template <typename T, typename Allocator>
+constexpr bool operator>=(const rb_tree<T, Allocator>& lhs,
+                          const rb_tree<T, Allocator>& rhs) {
+  return !operator<(lhs, rhs);
+}
+
+
+
+///////////////////////// specialization /////////////////////////
+template <typename T, typename Allocator>
+inline void swap(rb_tree<T, Allocator>& lhs, rb_tree<T, Allocator>& rhs) {
+  lhs.swap(rhs);
+}
+
+// TODO: erase && erase_if
+
 } // namespace stl
 } // namespace ginshio
+
+
+
+
+
+namespace std {
+///////////////////////// specialization /////////////////////////
+template <typename T, typename Allocator>
+inline void swap(ginshio::stl::rb_tree<T, Allocator>& lhs,
+                 ginshio::stl::rb_tree<T, Allocator>& rhs) {
+  lhs.swap(rhs);
+}
+
+// TODO: erase && erase_if
+} // namespace std
 
 #endif // GINSHIO_STL__STL_RB_TREE_HH_

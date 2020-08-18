@@ -741,7 +741,7 @@ template <typename T, typename Allocator>
 constexpr bool operator!=(const forward_list<T, Allocator>& lhs,
                           const forward_list<T, Allocator>& rhs) {
   return &lhs != &rhs && (lhs.size() != rhs.size() ||
-                          std::equal(lhs.begin(), lhs.end(), rhs.begin()));
+                          !std::equal(lhs.begin(), lhs.end(), rhs.begin()));
 }
 template <typename T, typename Allocator>
 constexpr bool operator<(const forward_list<T, Allocator>& lhs,

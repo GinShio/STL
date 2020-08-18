@@ -739,7 +739,7 @@ template <typename T, typename Allocator>
 constexpr bool operator!=(const list<T, Allocator>& lhs,
                           const list<T, Allocator>& rhs) {
   return &lhs != &rhs && (lhs.size() != rhs.size() ||
-                          std::equal(lhs.begin(), lhs.end(), rhs.begin()));
+                          !std::equal(lhs.begin(), lhs.end(), rhs.begin()));
 }
 template <typename T, typename Allocator>
 constexpr bool operator<(const list<T, Allocator>& lhs,

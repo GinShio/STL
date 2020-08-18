@@ -33,7 +33,7 @@ v.erase(v.begin() + 2, v.end());  // {1, 2}
   - 容器 及 适配器
     - 顺序容器 (string)
     - 容器适配器 (priority_queue)
-    - 有序关联容器
+    - 有序关联容器的 `erase` 和 `constructor` 方法，以及其他底层容器
     - 无序关联容器
   - 分配器
   - 迭代器

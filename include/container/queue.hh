@@ -158,10 +158,9 @@ constexpr bool operator>=(const queue<T, Container>& lhs,
 
 
 
-///////////////////////// speecialization /////////////////////////
+///////////////////////// specialization /////////////////////////
 template <typename T, typename Container>
-inline void swap(const queue<T, Container>& lhs,
-                 const queue<T, Container>& rhs) {
+inline void swap(queue<T, Container>& lhs, queue<T, Container>& rhs) {
   lhs.swap(rhs);
 }
 
@@ -170,11 +169,13 @@ inline void swap(const queue<T, Container>& lhs,
 
 
 
+
+
 namespace std {
-///////////////////////// speecialization /////////////////////////
+///////////////////////// specialization /////////////////////////
 template <typename T, typename Container>
-inline void swap(const ginshio::stl::queue<T, Container>& lhs,
-                 const ginshio::stl::queue<T, Container>& rhs) {
+inline void swap(ginshio::stl::queue<T, Container>& lhs,
+                 ginshio::stl::queue<T, Container>& rhs) {
   lhs.swap(rhs);
 }
 

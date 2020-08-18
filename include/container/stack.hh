@@ -155,10 +155,9 @@ constexpr bool operator>=(const stack<T, Container>& lhs,
 }
 
 
-///////////////////////// speecialization /////////////////////////
+///////////////////////// specialization /////////////////////////
 template <typename T, typename Container>
-inline void swap(const stack<T, Container>& lhs,
-                 const stack<T, Container>& rhs) {
+inline void swap(stack<T, Container>& lhs, stack<T, Container>& rhs) {
   lhs.swap(rhs);
 }
 
@@ -166,11 +165,13 @@ inline void swap(const stack<T, Container>& lhs,
 } // namespace ginshio
 
 
+
+
 namespace std {
-///////////////////////// speecialization /////////////////////////
+///////////////////////// specialization /////////////////////////
 template <typename T, typename Container>
-inline void swap(const ginshio::stl::stack<T, Container>& lhs,
-                 const ginshio::stl::stack<T, Container>& rhs) {
+inline void swap(ginshio::stl::stack<T, Container>& lhs,
+                 ginshio::stl::stack<T, Container>& rhs) {
   lhs.swap(rhs);
 }
 

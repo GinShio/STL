@@ -24,10 +24,18 @@
  * purpose.  It is provided "as is" without express or implied warranty.
  */
 
-#ifndef GINSHIO_STL__SET_HH_
-#define GINSHIO_STL__SET_HH_ 1
+#ifndef GINSHIO_STL__STL_SET_HH_
+#define GINSHIO_STL__STL_SET_HH_ 1
 
-#include "container/multiset.hh"
+#include "base/stl_tree_algo.hh"
+#include "rb_tree.hpp"
+
+#include <initializer_list>
+#include <memory>
+#include <type_traits>
+#include <utility>
+
+#include "container/stl_multiset.hh"
 
 namespace ginshio {
 namespace stl {
@@ -56,16 +64,34 @@ class set {
   using const_iterator = typename Container::const_iterator;
   using reverse_iterator = typename Container::reverse_iterator;
   using const_reverse_iterator = typename Container::const_reverse_iterator;
-  using node_type = typename Container::node_type;
-  // TODO: insert_return_type
+  // TODO: node_type && insert_return_type
 
   /////////////// data member ///////////////
  protected:
   container_type c;
 
-  /////////////// TODO: constructor ///////////////
+  /////////////// constructor ///////////////
  public:
   set() = default;
+  explicit set(const allocator_type& alloc) : c(alloc) {}
+  template <typename InputIt, typename = typename
+            std::enable_if<std::is_base_of<
+                             std::input_iterator_tag, typename
+                             std::iterator_traits<InputIt>::iterator_category>::
+                           value>::type*>
+  set(InputIt first, InputIt last,
+      const allocator_type& alloc = allocator_type()) : c(first, last, alloc) {}
+  set(const set& other) : c(other.c) {}
+  set(const set& other, const allocator_type& alloc) : c(other.c, alloc) {}
+  set(set&& other) noexcept = default;
+  set(set&& other, const allocator_type& alloc) :
+      c(std::move(other.c), alloc) {}
+  set(std::initializer_list<value_type> ilist,
+      const allocator_type& alloc = allocator_type()) : c(alloc) {
+    for (auto& _val : ilist) {
+      c.emplace_unique(_val);
+    }
+  }
 
   /////////////// destructor ///////////////
  public:
@@ -74,6 +100,9 @@ class set {
   /////////////// TODO: member function ///////////////
  public:
   constexpr const container_type& get_container() const noexcept { return c; }
+  constexpr const allocator_type get_allocator() const noexcept {
+    return c.get_allocator();
+  }
 
   /////////////// iterator ///////////////
  public:
@@ -128,7 +157,7 @@ class set {
   template <typename InputIt>
   void insert(InputIt first, InputIt last) {
     while (first != last) {
-      c.emplace_unique(std::move(*first));
+      c.emplace_unique(*first);
     }
   }
   void insert(std::initializer_list<value_type> ilist) {
@@ -146,34 +175,45 @@ class set {
   iterator emplace_hint(const_iterator hint, Args&&... args) {
     return c.emplace_hint_unique(hint, std::forward<Args>(args)...).first;
   }
-  // TODO: erase
+  iterator erase(const_iterator pos) { return c.erase(pos); }
+  iterator erase(const_iterator first, const_iterator last) {
+    return c.erase(first, last);
+  }
+  size_type erase(const key_type& key) { return c.erase(key); }
   // TODO: extract
   void swap(set& other) { c.swap(other.c); }
   void merge(set& other) { c.merge_unique(std::move(other.c)); }
-  void merge(set&& other) { c.merge_unique(std::forward(other.c)); }
-  // TODO: merge multiset && difference container(e.g. avl_tree)
+  void merge(set&& other) { c.merge_unique(std::move(other.c)); }
+  void merge(multiset<key_type, container_type>& other) {
+    c.merge_unique(std::move(other.c));
+  }
+  void merge(multiset<key_type, container_type>&& other) {
+    c.merge_unique(std::move(other.c));
+  }
+  // TODO: merge difference container(e.g. avl_tree)
 
   /////////////// find ///////////////
-  /////////////// TODO: template <typename K> ///////////////
+  /////////////// TODO: template overload K in C++14 ///////////////
  public:
-  size_type count(const Key& key) const {
+  size_type count(const key_type& key) const {
     return c.count(key);
   }
-  iterator find(const Key& key) { return c.find(key); }
-  const_iterator find(const Key& key) const { return c.find(key); }
-  // TODO: contains
-  std::pair<iterator, iterator> equal_range(const Key& key) {
+  iterator find(const key_type& key) { return c.find(key); }
+  const_iterator find(const key_type& key) const { return c.find(key); }
+  bool contains(const key_type& key) const { return c.find(key) != c.end(); }
+  std::pair<iterator, iterator> equal_range(const key_type& key) {
     return c.equal_range(key);
   }
-  std::pair<const_iterator, const_iterator> equal_range(const Key& key) const {
+  auto equal_range(const key_type& key) const
+      -> std::pair<const_iterator, const_iterator> {
     return c.equal_range(key);
   }
-  iterator lower_bound(const Key& key) { return c.lower_bound(key); }
-  const_iterator lower_bound(const Key& key) const {
+  iterator lower_bound(const key_type& key) { return c.lower_bound(key); }
+  const_iterator lower_bound(const key_type& key) const {
     return c.lower_bound(key);
   }
-  iterator upper_bound(const Key& key) { return c.upper_bound(key); }
-  const_iterator upper_bound(const Key& key) const {
+  iterator upper_bound(const key_type& key) { return c.upper_bound(key); }
+  const_iterator upper_bound(const key_type& key) const {
     return c.upper_bound(key);
   }
 };
@@ -182,9 +222,9 @@ class set {
 
 ///////////////////////// java style iterator /////////////////////////
 template <typename Key>
-using SetIterator = set<Key>::iterator;
+using SetIterator = typename set<Key>::iterator;
 template <typename Key>
-using SetConstIterator = set<Key>::const_iterator;
+using SetConstIterator = typename set<Key>::const_iterator;
 
 
 
@@ -228,7 +268,11 @@ inline void swap(set<Key, Container>& lhs, set<Key, Container>& rhs) {
   lhs.swap(rhs);
 }
 
-// TODO: erase && erase_if
+template <typename Key, typename Container, typename Pred>
+auto erase_if(set<Key, Container>& c, Pred pred)
+    -> typename set<Key, Container>::size_type {
+  return erase_if(c.get_container(), pred);
+}
 
 } // namespace stl
 } // namespace ginshio
@@ -243,7 +287,11 @@ inline void swap(ginshio::stl::set<Key, Container>& lhs,
   lhs.swap(rhs);
 }
 
-// TODO: erase && erase_if
+template <typename Key, typename Container, typename Pred>
+auto erase_if(ginshio::stl::set<Key, Container>& c, Pred pred)
+    -> typename ginshio::stl::set<Key, Container>::size_type {
+  return ginshio::stl::erase_if(c.get_container(), pred);
+}
 } // namespace std
 
-#endif // GINSHIO_STL__SET_HH_
+#endif // GINSHIO_STL__STL_SET_HH_

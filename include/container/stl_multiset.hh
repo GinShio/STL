@@ -24,10 +24,10 @@
  * purpose.  It is provided "as is" without express or implied warranty.
  */
 
-#ifndef GINSHIO_STL__MULTISET_HH_
-#define GINSHIO_STL__MULTISET_HH_ 1
+#ifndef GINSHIO_STL__STL_MULTISET_HH_
+#define GINSHIO_STL__STL_MULTISET_HH_ 1
 
-#include "container/set.hh"
+#include "container/stl_set.hh"
 
 namespace ginshio {
 namespace stl {
@@ -56,8 +56,7 @@ class multiset {
   using const_iterator = typename Container::const_iterator;
   using reverse_iterator = typename Container::reverse_iterator;
   using const_reverse_iterator = typename Container::const_reverse_iterator;
-  using node_type = typename Container::node_type;
-  // TODO: insert_return_type
+  // TODO: node_type && insert_return_type
 
   /////////////// data member ///////////////
  protected:
@@ -66,6 +65,23 @@ class multiset {
   /////////////// TODO: constructor ///////////////
  public:
   multiset() = default;
+  explicit multiset(const allocator_type& alloc) : c(alloc) {}
+  template <typename InputIt, typename = typename
+            std::enable_if<std::is_base_of<
+                             std::input_iterator_tag, typename
+                             std::iterator_traits<InputIt>::iterator_category>::
+                           value>::type*>
+  multiset(InputIt first, InputIt last,
+           const allocator_type& alloc = allocator_type()) :
+      c(first, last, alloc) {}
+  multiset(const multiset& other) : c(other.c) {}
+  multiset(const multiset& other, const allocator_type& alloc) :
+      c(other.c, alloc) {}
+  multiset(multiset&& other) noexcept = default;
+  multiset(multiset&& other, const allocator_type& alloc) :
+      c(std::move(other.c), alloc) {}
+  multiset(std::initializer_list<value_type> ilist,
+      const allocator_type& alloc = allocator_type()) : c(ilist, alloc) {}
 
   /////////////// destructor ///////////////
  public:
@@ -74,6 +90,9 @@ class multiset {
   /////////////// TODO: member function ///////////////
  public:
   constexpr const container_type& get_container() const noexcept { return c; }
+  constexpr const allocator_type get_allocator() const noexcept {
+    return c.get_allocator();
+  }
 
   /////////////// iterator ///////////////
  public:
@@ -124,7 +143,7 @@ class multiset {
   template <typename InputIt>
   void insert(InputIt first, InputIt last) {
     while (first != last) {
-      c.emplace_equal(std::move(*first));
+      c.emplace_equal(*first);
     }
   }
   void insert(std::initializer_list<value_type> ilist) {
@@ -142,34 +161,45 @@ class multiset {
   iterator emplace_hint(const_iterator hint, Args&&... args) {
     return c.emplace_hint_equal(hint, std::forward<Args>(args)...);
   }
-  // TODO: erase
+  iterator erase(const_iterator pos) { return c.erase(pos); }
+  iterator erase(const_iterator first, const_iterator last) {
+    return c.erase(first, last);
+  }
+  size_type erase(const key_type& key) { return c.erase(key); }
   // TODO: extract
   void swap(multiset& other) { c.swap(other.c); }
   void merge(multiset& other) { c.merge_equal(std::move(other.c)); }
-  void merge(multiset&& other) { c.merge_equal(std::forward(other.c)); }
-  // TODO: merge set && difference container(e.g. avl_tree)
+  void merge(multiset&& other) { c.merge_equal(std::move(other.c)); }
+  void merge(set<key_type, container_type>& other) {
+    c.merge_equal(std::move(other.c));
+  }
+  void merge(set<key_type, container_type>&& other) {
+    c.merge_equal(std::move(other.c));
+  }
+  // TODO: merge difference container(e.g. avl_tree)
 
   /////////////// find ///////////////
-  /////////////// TODO: template <typename K> ///////////////
+  /////////////// TODO: template overload K in C++14 ///////////////
  public:
-  size_type count(const Key& key) const {
+  size_type count(const key_type& key) const {
     return c.count(key);
   }
-  iterator find(const Key& key) { return c.find(key); }
-  const_iterator find(const Key& key) const { return c.find(key); }
-  // TODO: contains
-  std::pair<iterator, iterator> equal_range(const Key& key) {
+  iterator find(const key_type& key) { return c.find(key); }
+  const_iterator find(const key_type& key) const { return c.find(key); }
+  bool contains(const key_type& key) const { return c.find(key) != c.end(); }
+  std::pair<iterator, iterator> equal_range(const key_type& key) {
     return c.equal_range(key);
   }
-  std::pair<const_iterator, const_iterator> equal_range(const Key& key) const {
+  auto equal_range(const key_type& key) const
+      -> std::pair<const_iterator, const_iterator> {
     return c.equal_range(key);
   }
-  iterator lower_bound(const Key& key) { return c.lower_bound(key); }
-  const_iterator lower_bound(const Key& key) const {
+  iterator lower_bound(const key_type& key) { return c.lower_bound(key); }
+  const_iterator lower_bound(const key_type& key) const {
     return c.lower_bound(key);
   }
-  iterator upper_bound(const Key& key) { return c.upper_bound(key); }
-  const_iterator upper_bound(const Key& key) const {
+  iterator upper_bound(const key_type& key) { return c.upper_bound(key); }
+  const_iterator upper_bound(const key_type& key) const {
     return c.upper_bound(key);
   }
 };
@@ -178,9 +208,9 @@ class multiset {
 
 ///////////////////////// java style iterator /////////////////////////
 template <typename Key>
-using MultiSetIterator = multiset<Key>::iterator;
+using MultiSetIterator = typename multiset<Key>::iterator;
 template <typename Key>
-using MultiSetConstIterator = multiset<Key>::const_iterator;
+using MultiSetConstIterator = typename multiset<Key>::const_iterator;
 
 
 
@@ -224,7 +254,11 @@ inline void swap(multiset<Key, Container>& lhs, multiset<Key, Container>& rhs) {
   lhs.swap(rhs);
 }
 
-// TODO: erase && erase_if
+template <typename Key, typename Container, typename Pred>
+auto erase_if(multiset<Key, Container>& c, Pred pred)
+    -> typename multiset<Key, Container>::size_type {
+  return erase_if(c.get_container(), pred);
+}
 
 } // namespace stl
 } // namespace ginshio
@@ -239,7 +273,11 @@ inline void swap(ginshio::stl::multiset<Key, Container>& lhs,
   lhs.swap(rhs);
 }
 
-// TODO: erase && erase_if
+template <typename Key, typename Container, typename Pred>
+auto erase_if(ginshio::stl::multiset<Key, Container>& c, Pred pred)
+    -> typename ginshio::stl::multiset<Key, Container>::size_type {
+  return ginshio::stl::erase_if(c.get_container(), pred);
+}
 } // namespace std
 
-#endif // GINSHIO_STL__MULTISET_HH_
+#endif // GINSHIO_STL__STL_MULTISET_HH_

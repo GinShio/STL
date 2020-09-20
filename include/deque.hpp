@@ -24,7 +24,6 @@
  * purpose.  It is provided "as is" without express or implied warranty.
  */
 
-
 #ifndef GINSHIO_STL__DEQUE_HPP_
 #define GINSHIO_STL__DEQUE_HPP_ 1
 
@@ -32,15 +31,14 @@
 #include "base/stl_init.hh"
 
 #include <algorithm>
+#include <cstddef>
 #include <initializer_list>
 #include <iterator>
 #include <limits>
 #include <memory>
 #include <type_traits>
 
-#include <cstddef>
-
 #include "container/stl_deque.hh"
 #include "container/stl_deque.tcc"
 
-#endif // GINSHIO_STL__DEQUE_HPP_
+#endif  // GINSHIO_STL__DEQUE_HPP_

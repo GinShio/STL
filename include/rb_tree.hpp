@@ -30,14 +30,13 @@
 #include "base/stl_init.hh"
 #include "base/stl_tree_algo.hh"
 
+#include <cstddef>
+#include <cstdlib>
 #include <initializer_list>
 #include <limits>
 #include <memory>
 #include <utility>
 
-#include <cstddef>
-#include <cstdlib>
-
 #include "container/stl_rb_tree.hh"
 
-#endif // GINSHIO_STL__RB_TREE_HPP_
+#endif  // GINSHIO_STL__RB_TREE_HPP_

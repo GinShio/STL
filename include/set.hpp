@@ -35,7 +35,7 @@
 #include <type_traits>
 #include <utility>
 
-#include "container/stl_set.hh"
 #include "container/stl_multiset.hh"
+#include "container/stl_set.hh"
 
-#endif // GINSHIO_STL__SET_HPP_
+#endif  // GINSHIO_STL__SET_HPP_

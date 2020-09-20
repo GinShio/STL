@@ -24,19 +24,18 @@
  * purpose.  It is provided "as is" without express or implied warranty.
  */
 
-
-#ifndef GINSHIO_STL__STL_LIST_TCC_
-#define GINSHIO_STL__STL_LIST_TCC_ 1
+#ifndef GINSHIO_STL__CONTAINER_STL_LIST_TCC_
+#define GINSHIO_STL__CONTAINER_STL_LIST_TCC_ 1
 
 namespace ginshio {
 namespace stl {
 
 template <typename T, typename Allocator>
-auto list<T, Allocator>::erase(const_iterator first, const_iterator last)
-    -> typename list<T, Allocator>::iterator {
+auto list<T, Allocator>::erase(const_iterator first, const_iterator last) ->
+    typename list<T, Allocator>::iterator {
   _NodeBase* _cur = last._node->_prev;
-  for (_NodeBase* _prev = _cur->_prev,* _end = first._node->_prev;
-       _cur != _end; _cur = _prev, _prev = _prev->_prev) {
+  for (_NodeBase* _prev = _cur->_prev,* _end = first._node->_prev; _cur != _end;
+       _cur = _prev, _prev = _prev->_prev) {
     _Base::__put(_impl, static_cast<_NodeType*>(_cur));
     --_impl._header._size;
   }
@@ -83,7 +82,8 @@ void list<T, Allocator>::merge(list<T, Allocator>&& other) {
   other._impl._header.__init_default();
 }
 
-template <typename T, typename Allocator> template <typename Compare>
+template <typename T, typename Allocator>
+template <typename Compare>
 void list<T, Allocator>::merge(list<T, Allocator>&& other, Compare comp) {
   if (this == &other || this->get_allocator() != other.get_allocator()) {
     return;
@@ -122,8 +122,8 @@ void list<T, Allocator>::merge(list<T, Allocator>&& other, Compare comp) {
 }
 
 template <typename T, typename Allocator>
-auto list<T, Allocator>::remove(const value_type& value)
-    -> typename list<T, Allocator>::size_type {
+auto list<T, Allocator>::remove(const value_type& value) ->
+    typename list<T, Allocator>::size_type {
   size_type _removed = 0;
   iterator _cur = iterator(_impl._header._next);
   iterator _next = iterator(_cur._node->_next);
@@ -139,9 +139,10 @@ auto list<T, Allocator>::remove(const value_type& value)
   return _removed;
 }
 
-template <typename T, typename Allocator> template <typename UnaryPredicate>
-auto list<T, Allocator>::remove_if(UnaryPredicate p)
-    -> typename list<T, Allocator>::size_type {
+template <typename T, typename Allocator>
+template <typename UnaryPredicate>
+auto list<T, Allocator>::remove_if(UnaryPredicate p) ->
+    typename list<T, Allocator>::size_type {
   size_type _removed = 0;
   iterator _cur = iterator(_impl._header._next);
   iterator _next = iterator(_cur._node->_next);
@@ -184,9 +185,10 @@ auto list<T, Allocator>::unique() -> typename list<T, Allocator>::size_type {
   return _removed;
 }
 
-template <typename T, typename Allocator> template <typename BinaryPredicate>
-auto list<T, Allocator>::unique(BinaryPredicate p)
-    -> typename list<T, Allocator>::size_type {
+template <typename T, typename Allocator>
+template <typename BinaryPredicate>
+auto list<T, Allocator>::unique(BinaryPredicate p) ->
+    typename list<T, Allocator>::size_type {
   size_type _removed = 0;
   iterator _cur = iterator(_impl._header._next);
   iterator _next = iterator(_cur._node->_next);
@@ -235,7 +237,8 @@ void list<T, Allocator>::sort() {
   }
 }
 
-template <typename T, typename Allocator> template <typename Compare>
+template <typename T, typename Allocator>
+template <typename Compare>
 void list<T, Allocator>::sort(Compare comp) {
   if (_impl._header._size < 2) {
     return;
@@ -268,7 +271,8 @@ void list<T, Allocator>::sort(Compare comp) {
   }
 }
 
-template <typename T, typename Allocator> template <typename _InputIt>
+template <typename T, typename Allocator>
+template <typename _InputIt>
 void list<T, Allocator>::
 __assign_range_dispatch(_InputIt _first, _InputIt _last,
                         std::input_iterator_tag) {
@@ -284,10 +288,10 @@ __assign_range_dispatch(_InputIt _first, _InputIt _last,
   }
 }
 
-template <typename T, typename Allocator> template <typename _RandomIt>
-void list<T, Allocator>::
-__assign_range_dispatch(_RandomIt _first, _RandomIt _last,
-                        std::random_access_iterator_tag) {
+template <typename T, typename Allocator>
+template <typename _RandomIt>
+void list<T, Allocator>::__assign_range_dispatch(
+    _RandomIt _first, _RandomIt _last, std::random_access_iterator_tag) {
   iterator _it = iterator(_impl._header._next);
   size_type _n = 0, _size = std::distance(_first, _last);
   for (; _n < _impl._header._size && _n < _size; ++_n) {
@@ -301,7 +305,8 @@ __assign_range_dispatch(_RandomIt _first, _RandomIt _last,
   }
 }
 
-template <typename T, typename Allocator> template <typename... Args>
+template <typename T, typename Allocator>
+template <typename... Args>
 void list<T, Allocator>::__fill_n(_BaseImpl& _impl, const_iterator _next,
                                   const size_type& _count, Args&&... args) {
   for (size_type _n = 0; _n < _count; ++_n) {
@@ -310,7 +315,8 @@ void list<T, Allocator>::__fill_n(_BaseImpl& _impl, const_iterator _next,
   }
 }
 
-template <typename T, typename Allocator> template <typename _InputIt>
+template <typename T, typename Allocator>
+template <typename _InputIt>
 void list<T, Allocator>::__copy(_BaseImpl& _impl, const_iterator _next,
                                 _InputIt _first, _InputIt _last,
                                 std::input_iterator_tag) {
@@ -320,7 +326,8 @@ void list<T, Allocator>::__copy(_BaseImpl& _impl, const_iterator _next,
   }
 }
 
-template <typename T, typename Allocator> template <typename _InputIt>
+template <typename T, typename Allocator>
+template <typename _InputIt>
 void list<T, Allocator>::__copy_n(_BaseImpl& _impl, const_iterator _next,
                                   _InputIt _first, const size_type& _cnt) {
   for (size_type _n = 0; _n < _cnt; ++_n) {
@@ -330,7 +337,7 @@ void list<T, Allocator>::__copy_n(_BaseImpl& _impl, const_iterator _next,
   }
 }
 
-} // namespace stl
-} // namespace ginshio
+}  // namespace stl
+}  // namespace ginshio
 
-#endif // GINSHIO_STL__STL_LIST_TCC_
+#endif  // GINSHIO_STL__CONTAINER_STL_LIST_TCC_

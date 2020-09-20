@@ -24,9 +24,8 @@
  * purpose.  It is provided "as is" without express or implied warranty.
  */
 
-
-#ifndef GINSHIO_STL__STL_DEQUE_HH_
-#define GINSHIO_STL__STL_DEQUE_HH_ 1
+#ifndef GINSHIO_STL__CONTAINER_STL_DEQUE_HH_
+#define GINSHIO_STL__CONTAINER_STL_DEQUE_HH_ 1
 
 namespace ginshio {
 namespace stl {
@@ -34,12 +33,15 @@ namespace stl {
 namespace __container_base {
 ///////////////////////// deque constexpr /////////////////////////
 constexpr std::size_t _DEUQE_DEFAULT_CHUNK_SIZE = 4096;
-template <typename _T> constexpr std::size_t __deque_chunk_size() noexcept {
+template <typename _T>
+constexpr std::size_t __deque_chunk_size() noexcept {
   return sizeof(_T) <= 128 ? _DEUQE_DEFAULT_CHUNK_SIZE : sizeof(_T) * 16;
 }
-template <typename _T> constexpr std::size_t __deque_chunk_capacity() noexcept {
+template <typename _T>
+constexpr std::size_t __deque_chunk_capacity() noexcept {
   return sizeof(_T) <= 128 ? _DEUQE_DEFAULT_CHUNK_SIZE / sizeof(_T) : 16;
 }
+
 
 
 ///////////////////////// deque iterator /////////////////////////
@@ -77,18 +79,15 @@ struct _DequeIterator {
   /////////////// constructor ///////////////
  public:
   _DequeIterator() = default;
-  explicit _DequeIterator(_ChunkPtr _c) {
-    this->assign(*_c, _c);
-  }
-  explicit _DequeIterator(_ValuePtr _p, _ChunkPtr _c) {
-    this->assign(_p, _c);
-  }
+  explicit _DequeIterator(_ChunkPtr _c) { this->assign(*_c, _c); }
+  explicit _DequeIterator(_ValuePtr _p, _ChunkPtr _c) { this->assign(_p, _c); }
   _DequeIterator(const _SelfIterator&) = default;
   template <typename _Iter, typename = typename
             std::enable_if<std::is_same<_SelfIterator, _ConstIterator>::value &&
                            std::is_same<_OtherIterator, _Iter>::value>::type*>
-  _DequeIterator(const _Iter& _it) : _cur(_it._cur), _first(_it._first),
-                                     _last(_it._last), _node(_it._node) {}
+  _DequeIterator(const _Iter& _it)
+      : _cur(_it._cur), _first(_it._first),
+        _last(_it._last), _node(_it._node) {}
 
   /////////////// assign ///////////////
  public:
@@ -147,9 +146,8 @@ struct _DequeIterator {
     if (0 <= _offset && _offset < _chunk_cap) {
       _cur += _n;
     } else {
-      const difference_type _tmp =
-          _offset < 0 ? -((-_offset - 1) / _chunk_cap) - 1 :
-          _offset / _chunk_cap;
+      const difference_type _tmp = _offset < 0 ?
+          -((-_offset - 1) / _chunk_cap) - 1 : _offset / _chunk_cap;
       this->__set_node(_tmp);
       _cur = _first + (_offset - _tmp * _chunk_cap);
     }
@@ -274,21 +272,24 @@ constexpr auto operator-(
 }
 template <typename _T, typename _Ptr, typename _Ref>
 constexpr auto operator-(const _DequeIterator<_T, _Ptr, _Ref>& _lit,
-                         const _DequeIterator<_T, _Ptr, _Ref>& _rit) noexcept
-    -> typename _DequeIterator<_T, _Ptr, _Ref>::difference_type {
-  return _lit._node == _rit._node ? _lit._cur - _rit._cur :
-      (__deque_chunk_capacity<_T>() * (_lit._node - _rit._node - 1) +
-       (_lit._cur - _lit._first) + (_rit._last - _rit._cur));
+                         const _DequeIterator<_T, _Ptr, _Ref>& _rit) noexcept ->
+    typename _DequeIterator<_T, _Ptr, _Ref>::difference_type {
+  return _lit._node == _rit._node
+      ? _lit._cur - _rit._cur
+      : (__deque_chunk_capacity<_T>() * (_lit._node - _rit._node - 1) +
+         (_lit._cur - _lit._first) + (_rit._last - _rit._cur));
 }
 template <typename _T, typename _PtrL, typename _RefL,
           typename _PtrR, typename _RefR>
 constexpr auto operator-(const _DequeIterator<_T, _PtrL, _RefL>& _lit,
                          const _DequeIterator<_T, _PtrR, _RefR>& _rit) noexcept
     -> typename _DequeIterator<_T, _PtrL, _RefR>::difference_type {
-  return _lit._node == _rit._node ? _lit._cur - _rit._cur :
-      (__deque_chunk_capacity<_T>() * (_lit._node - _rit._node - 1) +
-       (_lit._cur - _lit._first) + (_rit._last - _rit._cur));
+  return _lit._node == _rit._node
+             ? _lit._cur - _rit._cur
+             : (__deque_chunk_capacity<_T>() * (_lit._node - _rit._node - 1) +
+                (_lit._cur - _lit._first) + (_rit._last - _rit._cur));
 }
+
 
 
 ///////////////////////// deque base /////////////////////////
@@ -338,8 +339,8 @@ struct _DequeBase {
   }
   _DequeBase(const std::size_t& _elm_num,
              const _DataAllocType& _alloc) : _impl(_alloc) {
-    ginshio::stl::
-        __check_length_error("deque", _elm_num, _DequeBase::__max_size());
+    ginshio::stl::__check_length_error("deque", _elm_num,
+                                       _DequeBase::__max_size());
     _DequeBase::__allocate(_impl, _elm_num);
   }
   _DequeBase(_DequeBase&& _other) noexcept : _impl(std::move(_other._impl)) {
@@ -364,19 +365,19 @@ struct _DequeBase {
 
   /////////////// growth ///////////////
  protected:
-  static void __get_chunk(_DataAllocType& _a,
-                          _ChunkPtr _first, const std::size_t& _cnt);
-  static void __put_chunk(_DataAllocType& _a,
-                          _ChunkPtr _first, const std::size_t& _cnt);
+  static void __get_chunk(_DataAllocType& _a, _ChunkPtr _first,
+                          const std::size_t& _cnt);
+  static void __put_chunk(_DataAllocType& _a, _ChunkPtr _first,
+                          const std::size_t& _cnt);
   static _ChunkPtr __get_map(_ChunkAllocType _a, const std::size_t& _cnt) {
     return _ChunkAllocTraits::allocate(_a, _cnt);
   }
-  static void __put_map(_ChunkAllocType _a,
-                        _ChunkPtr _ptr, const std::size_t& _cnt) {
+  static void __put_map(_ChunkAllocType _a, _ChunkPtr _ptr,
+                        const std::size_t& _cnt) {
     _ChunkAllocTraits::deallocate(_a, _ptr, _cnt);
   }
-  static void __reallocate_map(_DequeImpl& _impl,
-                               const std::size_t& _len, const bool& _is_front);
+  static void __reallocate_map(_DequeImpl& _impl, const std::size_t& _len,
+                               const bool& _is_front);
 
   /////////////// allocate ///////////////
  protected:
@@ -416,7 +417,7 @@ struct _DequeBase {
   static void __deallocate_chunk_aux(_DequeImpl& _impl, std::false_type);
 };
 
-} // namespace __container_base
+}  // namespace __container_base
 
 
 
@@ -455,18 +456,18 @@ class deque : protected __container_base::_DequeBase<T, Allocator> {
   deque() = default;
   explicit deque(const Allocator& alloc) : _Base(alloc) {}
   explicit deque(size_type count, const T& value,
-                 const Allocator& alloc = allocator_type()) :
-      _Base(count, alloc) {
+                 const Allocator& alloc = allocator_type())
+      : _Base(count, alloc) {
     try {
-      _impl._end = ginshio::stl::
-          uninitialized_fill_n(_impl._begin, count, value);
+      _impl._end =
+          ginshio::stl::uninitialized_fill_n(_impl._begin, count, value);
     } catch (...) {
       _Base::__put_chunk(_impl, _impl._begin._node + 1, _impl._chunk_size - 3);
       throw;
     }
   }
-  explicit deque(size_type count, const Allocator& alloc = allocator_type()) :
-      _Base(count, alloc) {
+  explicit deque(size_type count, const Allocator& alloc = allocator_type())
+      : _Base(count, alloc) {
     try {
       for (size_type _n = 0; _n < count; ++_n) {
         ginshio::stl::construct(_impl._end._cur);
@@ -479,11 +480,11 @@ class deque : protected __container_base::_DequeBase<T, Allocator> {
       throw;
     }
   }
-  template <typename InputIt, typename = typename
-            std::enable_if<std::is_base_of<
-                             std::input_iterator_tag, typename
-                             std::iterator_traits<InputIt>::iterator_category>::
-                           value>::type*>
+  template <typename InputIt,
+            typename = typename std::enable_if<
+                std::is_base_of<std::input_iterator_tag,
+                                typename std::iterator_traits<
+                                    InputIt>::iterator_category>::value>::type*>
   deque(InputIt first, InputIt last,
         const allocator_type& alloc = allocator_type()) : _Base(alloc) {
     try {
@@ -493,28 +494,24 @@ class deque : protected __container_base::_DequeBase<T, Allocator> {
       throw;
     }
   }
-  deque(const deque& other) :
-      _Base(other.size(), _DataAllocTraits::
+  deque(const deque& other)
+    : _Base(other.size(), _DataAllocTraits::
             select_on_container_copy_construction(other.get_allocator())) {
     try {
-      _impl._end = ginshio::stl::
-          uninitialized_copy(other._impl._begin, other._impl._end,
-                             _impl._begin);
+      _impl._end = ginshio::stl::uninitialized_copy(
+          other._impl._begin, other._impl._end, _impl._begin);
     } catch (...) {
-      _Base::__put_chunk(_impl, _impl._begin._node + 1,
-                         _impl._chunk_size - 3);
+      _Base::__put_chunk(_impl, _impl._begin._node + 1, _impl._chunk_size - 3);
       throw;
     }
   }
-  deque(const deque& other, const allocator_type& alloc) :
-      _Base(other.size(), alloc) {
+  deque(const deque& other, const allocator_type& alloc)
+      : _Base(other.size(), alloc) {
     try {
-      _impl._end = ginshio::stl::
-          uninitialized_copy(other._impl._begin, other._impl._end,
-                             _impl._begin);
+      _impl._end = ginshio::stl::uninitialized_copy(
+          other._impl._begin, other._impl._end, _impl._begin);
     } catch (...) {
-      _Base::__put_chunk(_impl, _impl._begin._node + 1,
-                         _impl._chunk_size - 3);
+      _Base::__put_chunk(_impl, _impl._begin._node + 1, _impl._chunk_size - 3);
       throw;
     }
   }
@@ -529,8 +526,7 @@ class deque : protected __container_base::_DequeBase<T, Allocator> {
     }
     iterator _new_begin = _impl._begin - other.size();
     try {
-      ginshio::stl::
-          uninitialized_move(other.begin(), other.end(), _new_begin);
+      ginshio::stl::uninitialized_move(other.begin(), other.end(), _new_begin);
     } catch (...) {
       _Base::__put_chunk(_impl, _new_begin._node,
                          _impl._begin._node - _new_begin._node);
@@ -538,14 +534,13 @@ class deque : protected __container_base::_DequeBase<T, Allocator> {
     }
     _impl._begin = _new_begin;
   }
-  deque(std::initializer_list<value_type> ilist,
-        const allocator_type& alloc) : _Base(ilist.size(), alloc) {
+  deque(std::initializer_list<value_type> ilist, const allocator_type& alloc)
+      : _Base(ilist.size(), alloc) {
     try {
-      _impl._end = ginshio::stl::
-          uninitialized_copy(ilist.begin(), ilist.end(), _impl._begin);
+      _impl._end = ginshio::stl::uninitialized_copy(ilist.begin(), ilist.end(),
+                                                    _impl._begin);
     } catch (...) {
-      _Base::__put_chunk(_impl, _impl._begin._node + 1,
-                         _impl._chunk_size - 3);
+      _Base::__put_chunk(_impl, _impl._begin._node + 1, _impl._chunk_size - 3);
       throw;
     }
   }
@@ -559,14 +554,14 @@ class deque : protected __container_base::_DequeBase<T, Allocator> {
     for (; _n < _size && _n < count; ++_n) {
       *_cur = value;
     }
-    _n < count ?
-         this->insert(_cur, count - _n, value) : this->erase(_cur, _impl._end);
+    _n < count ? this->insert(_cur, count - _n, value)
+               : this->erase(_cur, _impl._end);
   }
-  template <typename InputIt, typename = typename
-            std::enable_if<std::is_base_of<
-                             std::input_iterator_tag, typename
-                             std::iterator_traits<InputIt>::iterator_category>::
-                           value>::type*>
+  template <typename InputIt,
+            typename = typename std::enable_if<
+                std::is_base_of<std::input_iterator_tag,
+                                typename std::iterator_traits<
+                                    InputIt>::iterator_category>::value>::type*>
   void assign(InputIt first, InputIt last) {
     using _Category = typename std::iterator_traits<InputIt>::iterator_category;
     this->__assign_aux(first, last, _Category());
@@ -650,18 +645,14 @@ class deque : protected __container_base::_DequeBase<T, Allocator> {
   constexpr const_iterator cend() const noexcept {
     return const_iterator(_impl._end);
   }
-  reverse_iterator rbegin() noexcept {
-    return reverse_iterator(_impl._end);
-  }
+  reverse_iterator rbegin() noexcept { return reverse_iterator(_impl._end); }
   constexpr const_reverse_iterator rbegin() const noexcept {
     return const_reverse_iterator(const_iterator(_impl._end));
   }
   constexpr const_reverse_iterator crbegin() const noexcept {
     return const_reverse_iterator(const_iterator(_impl._end));
   }
-  reverse_iterator rend() noexcept {
-    return reverse_iterator(_impl._begin);
-  }
+  reverse_iterator rend() noexcept { return reverse_iterator(_impl._begin); }
   constexpr const_reverse_iterator rend() const noexcept {
     return const_reverse_iterator(const_iterator(_impl._begin));
   }
@@ -682,7 +673,8 @@ class deque : protected __container_base::_DequeBase<T, Allocator> {
       return;
     }
     std::size_t _new_size = (_impl._end - _impl._begin) /
-        __container_base::__deque_chunk_capacity<value_type>() + 3;
+        __container_base::__deque_chunk_capacity<value_type>() +
+        3;
     if (_impl._chunk_size <= _new_size) {
       return;
     }
@@ -698,7 +690,7 @@ class deque : protected __container_base::_DequeBase<T, Allocator> {
   }
   constexpr size_type capacity() const noexcept {
     return _impl._chunk_size *
-        __container_base::__deque_chunk_capacity<value_type>();
+           __container_base::__deque_chunk_capacity<value_type>();
   }
 
   /////////////// modifier ///////////////
@@ -719,17 +711,17 @@ class deque : protected __container_base::_DequeBase<T, Allocator> {
     this->emplace(pos, std::forward<value_type>(value));
     return _impl._begin + _dist;
   }
-  iterator insert(const_iterator pos,
-                  size_type count, const value_type& value) {
+  iterator insert(const_iterator pos, size_type count,
+                  const value_type& value) {
     iterator _it = this->__insert_aux(iterator(pos._cur, pos._node), count);
     ginshio::stl::uninitialized_fill_n(_it, count, value);
     return _it;
   }
-  template <typename InputIt, typename = typename
-            std::enable_if<std::is_base_of<
-                             std::input_iterator_tag, typename
-                             std::iterator_traits<InputIt>::iterator_category>::
-                           value>::type*>
+  template <typename InputIt,
+            typename = typename std::enable_if<
+                std::is_base_of<std::input_iterator_tag,
+                                typename std::iterator_traits<
+                                    InputIt>::iterator_category>::value>::type*>
   iterator insert(const_iterator pos, InputIt first, InputIt last) {
     using _Category = typename std::iterator_traits<InputIt>::iterator_category;
     if (first != last) {
@@ -741,8 +733,8 @@ class deque : protected __container_base::_DequeBase<T, Allocator> {
     return iterator(pos._cur, pos._node);
   }
   iterator insert(const_iterator pos, std::initializer_list<value_type> ilist) {
-    iterator _it = deque::
-        __insert_aux(_impl, iterator(pos._cur, pos._node), ilist.size());
+    iterator _it =
+        deque::__insert_aux(_impl, iterator(pos._cur, pos._node), ilist.size());
     ginshio::stl::uninitialized_copy(ilist.begin(), ilist.end(), _it);
     return _it;
   }
@@ -753,11 +745,11 @@ class deque : protected __container_base::_DequeBase<T, Allocator> {
     } else if (pos == _impl._end) {
       return this->emplace_back(std::forward<Args>(args)...);
     }
-    iterator _it = deque::
-        __is_front(static_cast<size_type>(pos - _impl._begin),
-                   static_cast<size_type>(_impl._end - _impl._begin) - 1) ?
-        deque::__exten_cap_front(_impl, iterator(pos._cur, pos._node), 1) :
-        deque::__exten_cap_back(_impl, iterator(pos._cur, pos._node), 1);
+    iterator _it =
+        deque::__is_front(static_cast<size_type>(pos - _impl._begin),
+                          static_cast<size_type>(_impl._end - _impl._begin) - 1)
+            ? deque::__exten_cap_front(_impl, iterator(pos._cur, pos._node), 1)
+            : deque::__exten_cap_back(_impl, iterator(pos._cur, pos._node), 1);
     ginshio::stl::construct(_it._cur, std::forward<Args>(args)...);
     return *_it;
   }
@@ -789,9 +781,9 @@ class deque : protected __container_base::_DequeBase<T, Allocator> {
     try {
       ginshio::stl::construct(_impl._end._cur, std::forward<Args>(args)...);
     } catch (...) {
-      _DataAllocTraits::
-          deallocate(_impl, *(_impl._end._node + 1),
-                     __container_base::__deque_chunk_capacity<value_type>());
+      _DataAllocTraits::deallocate(
+          _impl, *(_impl._end._node + 1),
+          __container_base::__deque_chunk_capacity<value_type>());
       throw;
     }
     ++_impl._end;
@@ -799,9 +791,9 @@ class deque : protected __container_base::_DequeBase<T, Allocator> {
   }
   void pop_back() {
     if (_impl._end._cur == _impl._end._first) {
-      _DataAllocTraits::
-          deallocate(_impl, *_impl._end._node,
-                     __container_base::__deque_chunk_capacity<value_type>());
+      _DataAllocTraits::deallocate(
+          _impl, *_impl._end._node,
+          __container_base::__deque_chunk_capacity<value_type>());
       _impl._end.__set_node(-1);
       _impl._end._cur = _impl._end._last - 1;
     } else {
@@ -823,9 +815,9 @@ class deque : protected __container_base::_DequeBase<T, Allocator> {
       ginshio::stl::construct(_impl._begin._cur, std::forward<Args>(args)...);
     } catch (...) {
       ++_impl._begin;
-      _DataAllocTraits::
-          deallocate(_impl, *(_impl._begin._node - 1),
-                     __container_base::__deque_chunk_capacity<value_type>());
+      _DataAllocTraits::deallocate(
+          _impl, *(_impl._begin._node - 1),
+          __container_base::__deque_chunk_capacity<value_type>());
       throw;
     }
     return *_impl._begin;
@@ -835,9 +827,9 @@ class deque : protected __container_base::_DequeBase<T, Allocator> {
     if (_impl._begin._cur + 1 == _impl._begin._last) {
       _impl._begin.__set_node(1);
       _impl._begin._cur = *_impl._begin._node;
-      _DataAllocTraits::
-          deallocate(_impl, *(_impl._begin._node - 1),
-                     __container_base::__deque_chunk_capacity<value_type>());
+      _DataAllocTraits::deallocate(
+          _impl, *(_impl._begin._node - 1),
+          __container_base::__deque_chunk_capacity<value_type>());
     } else {
       ++_impl._begin;
     }
@@ -845,8 +837,8 @@ class deque : protected __container_base::_DequeBase<T, Allocator> {
   void resize(size_type count);
   void resize(size_type count, const value_type& value) {
     if (this->size() < count) {
-      ginshio::stl::
-          __check_length_error("deque::resize", count, _Base::__max_size());
+      ginshio::stl::__check_length_error("deque::resize", count,
+                                         _Base::__max_size());
       this->insert(_impl._end, count - this->size(), value);
     } else if (this->size() > count) {
       deque::__erase_back(_impl, _impl._begin + count);
@@ -872,8 +864,8 @@ class deque : protected __container_base::_DequeBase<T, Allocator> {
     const size_type _len = static_cast<size_type>(std::distance(_first, _last));
     if (this->size() < _len) {
       ginshio::stl::uninitialized_copy(
-          ginshio::stl::copy_n(_first, this->size(), _impl._begin).first,
-          _last, this->__insert_aux(_impl._end, _len - this->size()));
+          ginshio::stl::copy_n(_first, this->size(), _impl._begin).first, _last,
+          this->__insert_aux(_impl._end, _len - this->size()));
       return;
     }
     deque::__erase_back(_impl, ginshio::stl::copy(_first, _last, _impl._begin));
@@ -888,13 +880,12 @@ class deque : protected __container_base::_DequeBase<T, Allocator> {
   void __insert_aux(iterator _pos, _ForwardIt _first, _ForwardIt _last,
                     std::forward_iterator_tag) {
     ginshio::stl::uninitialized_copy(
-        _first, _last,
-        this->__insert_aux(_pos, std::distance(_first, _last)));
+        _first, _last, this->__insert_aux(_pos, std::distance(_first, _last)));
   }
-  template <typename _RandomIt, typename = typename
-            std::enable_if<std::is_same<_RandomIt, iterator>::value ||
-                           std::is_same<_RandomIt, const_iterator>::value>::
-            type*>
+  template <typename _RandomIt,
+            typename = typename std::enable_if<
+                std::is_same<_RandomIt, iterator>::value ||
+                std::is_same<_RandomIt, const_iterator>::value>::type*>
   void __insert_aux(iterator _pos, _RandomIt _first, _RandomIt _last,
                     std::random_access_iterator_tag) {
     const size_type _len = _last - _first;
@@ -905,8 +896,9 @@ class deque : protected __container_base::_DequeBase<T, Allocator> {
       _first = _it + (_first_dist < 0 ? _first_dist : _first_dist + _len);
       _last = _it + (_last_dist <= 0 ? _last_dist : _last_dist + _len);
       if (_first_dist < 0 && 0 < _last_dist) {
-        ginshio::stl::uninitialized_copy(_it + _len, _last, ginshio::stl::
-                                         uninitialized_copy(_first, _it, _it));
+        ginshio::stl::uninitialized_copy(
+            _it + _len, _last,
+            ginshio::stl::uninitialized_copy(_first, _it, _it));
       } else {
         ginshio::stl::copy(_first, _last, _it);
       }
@@ -927,8 +919,7 @@ class deque : protected __container_base::_DequeBase<T, Allocator> {
   }
   static void __erase_back(_BaseImpl& _impl, iterator _pos) {
     ginshio::stl::destroy(_pos, _impl._end);
-    _Base::__put_chunk(_impl, _pos._node + 1,
-                       _impl._end._node - _pos._node);
+    _Base::__put_chunk(_impl, _pos._node + 1, _impl._end._node - _pos._node);
     _impl._end = _pos;
   }
 
@@ -999,22 +990,22 @@ inline void swap(deque<T, Allocator>& lhs, deque<T, Allocator>& rhs) {
 }
 
 template <typename T, typename Allocator, typename U>
-inline auto erase(deque<T, Allocator>& d, const U& value)
-    -> typename deque<T, Allocator>::size_type {
+inline auto erase(deque<T, Allocator>& d, const U& value) ->
+    typename deque<T, Allocator>::size_type {
   typename deque<T, Allocator>::size_type size = d.size();
   d.erase(std::remove(d.begin(), d.end(), value), d.end());
   return size - d.size();
 }
 template <typename T, typename Allocator, typename Pred>
-inline auto erase_if(deque<T, Allocator>& d, Pred pred)
-    -> typename deque<T, Allocator>::size_type {
+inline auto erase_if(deque<T, Allocator>& d, Pred pred) ->
+    typename deque<T, Allocator>::size_type {
   typename deque<T, Allocator>::size_type size = d.size();
   d.erase(std::remove_if(d.begin(), d.end(), pred), d.end());
   return size - d.size();
 }
 
-} // namespace stl
-} // namespace ginshio
+}  // namespace stl
+}  // namespace ginshio
 
 
 
@@ -1029,19 +1020,19 @@ inline void swap(ginshio::stl::deque<T, Allocator>& lhs,
 }
 
 template <typename T, typename Allocator, typename U>
-inline auto erase(ginshio::stl::deque<T, Allocator>& d, const U& value)
-    -> typename ginshio::stl::deque<T, Allocator>::size_type {
+inline auto erase(ginshio::stl::deque<T, Allocator>& d, const U& value) ->
+    typename ginshio::stl::deque<T, Allocator>::size_type {
   auto size = d.size();
   d.erase(std::remove(d.begin(), d.end(), value), d.end());
   return size - d.size();
 }
 template <typename T, typename Allocator, typename Pred>
-inline auto erase_if(ginshio::stl::deque<T, Allocator>& d, Pred pred)
-    -> typename ginshio::stl::deque<T, Allocator>::size_type {
+inline auto erase_if(ginshio::stl::deque<T, Allocator>& d, Pred pred) ->
+    typename ginshio::stl::deque<T, Allocator>::size_type {
   auto size = d.size();
   d.erase(std::remove_if(d.begin(), d.end(), pred), d.end());
   return size - d.size();
 }
-} // namespace std
+}  // namespace std
 
-#endif // GINSHIO_STL__STL_DEQUE_HH_
+#endif  // GINSHIO_STL__CONTAINER_STL_DEQUE_HH_

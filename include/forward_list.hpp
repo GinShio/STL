@@ -5,6 +5,7 @@
 #include "base/stl_init.hh"
 
 #include <algorithm>
+#include <cstddef>
 #include <initializer_list>
 #include <iterator>
 #include <limits>
@@ -12,9 +13,7 @@
 #include <type_traits>
 #include <utility>
 
-#include <cstddef>
-
 #include "container/stl_forward_list.hh"
 #include "container/stl_forward_list.tcc"
 
-#endif // GINSHIO_STL__FORWARD_LIST_HPP_
+#endif  // GINSHIO_STL__FORWARD_LIST_HPP_

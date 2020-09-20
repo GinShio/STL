@@ -24,21 +24,19 @@
  * purpose.  It is provided "as is" without express or implied warranty.
  */
 
-#ifndef GINSHIO_STL__STL_RB_TREE_HH_
-#define GINSHIO_STL__STL_RB_TREE_HH_ 1
+#ifndef GINSHIO_STL__CONTAINER_STL_RB_TREE_HH_
+#define GINSHIO_STL__CONTAINER_STL_RB_TREE_HH_ 1
 
 #include "base/stl_init.hh"
 #include "base/stl_tree_algo.hh"
-
 #include "stl_tree_base.hh"
 
+#include <cstddef>
+#include <cstdlib>
 #include <initializer_list>
 #include <limits>
 #include <memory>
 #include <utility>
-
-#include <cstddef>
-#include <cstdlib>
 
 namespace ginshio {
 namespace stl {
@@ -81,28 +79,29 @@ class rb_tree : protected __container_base::_TreeBase<T, Allocator> {
   rb_tree() = default;
   explicit rb_tree(const allocator_type& alloc)
       : _Base(_NodeAllocType(alloc)) {}
-  template <typename InputIt, typename = typename
-            std::enable_if<std::is_base_of<
-                             std::input_iterator_tag, typename
-                             std::iterator_traits<InputIt>::iterator_category>::
-                           value>::type*>
+  template <typename InputIt,
+            typename = typename std::enable_if<
+                std::is_base_of<std::input_iterator_tag,
+                                typename std::iterator_traits<
+                                    InputIt>::iterator_category>::value>::type*>
   rb_tree(InputIt first, InputIt last,
-          const allocator_type& alloc = allocator_type()) :
-      _Base(_NodeAllocType(alloc)) {
+          const allocator_type& alloc = allocator_type())
+      : _Base(_NodeAllocType(alloc)) {
     using _Category = typename std::iterator_traits<InputIt>::iterator_category;
     rb_tree::__copy(_impl, this->begin(), first, last, _Category());
   }
-  rb_tree(const rb_tree& other) : _Base(
-      _NodeAllocType(_DataAllocTraits::select_on_container_copy_construction(
-                         other.get_allocator()))) {
+  rb_tree(const rb_tree& other)
+      : _Base(_NodeAllocType(
+            _DataAllocTraits::select_on_container_copy_construction(
+                other.get_allocator()))) {
     if (other._impl._header._size == 0) {
       return;
     }
     rb_tree::__copy(_impl, other.begin(), other.end(),
                     std::bidirectional_iterator_tag());
   }
-  rb_tree(const rb_tree& other, const allocator_type& alloc) :
-      _Base(_NodeAllocType(alloc)) {
+  rb_tree(const rb_tree& other, const allocator_type& alloc)
+      : _Base(_NodeAllocType(alloc)) {
     if (other._impl._header._size == 0) {
       return;
     }
@@ -110,8 +109,8 @@ class rb_tree : protected __container_base::_TreeBase<T, Allocator> {
                     std::bidirectional_iterator_tag());
   }
   rb_tree(rb_tree&& other) noexcept = default;
-  rb_tree(rb_tree&& other, const allocator_type& alloc) :
-      _Base(_NodeAllocType(alloc)) {
+  rb_tree(rb_tree&& other, const allocator_type& alloc)
+      : _Base(_NodeAllocType(alloc)) {
     if (alloc == other.get_allocator()) {
       _impl.__swap(other._impl);
       return;
@@ -120,8 +119,8 @@ class rb_tree : protected __container_base::_TreeBase<T, Allocator> {
                     std::bidirectional_iterator_tag());
   }
   rb_tree(std::initializer_list<value_type> ilist,
-          const allocator_type& alloc = allocator_type()) :
-      _Base(_NodeAllocType(alloc)) {
+          const allocator_type& alloc = allocator_type())
+      : _Base(_NodeAllocType(alloc)) {
     rb_tree::__copy_n(_impl, ilist.begin(), ilist.size());
   }
 
@@ -222,8 +221,9 @@ class rb_tree : protected __container_base::_TreeBase<T, Allocator> {
     }
     return iterator(last._node);
   }
-  template <typename Key, typename = typename
-            std::enable_if<std::is_convertible<value_type, Key>::value>::type*>
+  template <typename Key,
+            typename = typename std::enable_if<
+                std::is_convertible<value_type, Key>::value>::type*>
   size_type erase(const Key& key) {
     std::pair<iterator, iterator> _pair = this->equal_range(key);
     const size_type _old = _impl._header._size;
@@ -231,18 +231,19 @@ class rb_tree : protected __container_base::_TreeBase<T, Allocator> {
     return _old - _impl._header._size;
   }
   node_type extract(const_iterator pos) {
-    return rb_tree::
-        __extract_aux(pos._node, static_cast<_NodeBase*>(&_impl._header));
+    return rb_tree::__extract_aux(pos._node,
+                                  static_cast<_NodeBase*>(&_impl._header));
   }
-  template <typename Key, typename = typename
-            std::enable_if<std::is_convertible<value_type, Key>::value>::type*>
+  template <typename Key,
+            typename = typename std::enable_if<
+                std::is_convertible<value_type, Key>::value>::type*>
   node_type extract(const Key& key) {
     iterator _pos = this->find(key);
     if (_pos._node == static_cast<_NodeBase*>(&_impl._header)) {
       return nullptr;
     }
-    return rb_tree::
-        __extract_aux(_pos._node, static_cast<_NodeBase*>(&_impl._header));
+    return rb_tree::__extract_aux(_pos._node,
+                                  static_cast<_NodeBase*>(&_impl._header));
   }
   // TODO: merge (from other tree, e.g. avl_tree)
   void merge_equal(rb_tree& other) {
@@ -283,9 +284,9 @@ class rb_tree : protected __container_base::_TreeBase<T, Allocator> {
       }
     }
   }
-  void swap(rb_tree& other)
-      noexcept(_NodeAllocTraits::propagate_on_container_swap::value ||
-               _NodeAllocTraits::is_always_equal::value) {
+  void swap(rb_tree& other) noexcept(
+      _NodeAllocTraits::propagate_on_container_swap::value ||
+      _NodeAllocTraits::is_always_equal::value) {
     if (this == &other) {
       return;
     }
@@ -357,7 +358,7 @@ class rb_tree : protected __container_base::_TreeBase<T, Allocator> {
       *_child = _tmp->_right;  // __x might be nullptr
     } else {
       if (_tmp->_right == nullptr) {
-        *_child = _tmp->_left; // __x != nullptr
+        *_child = _tmp->_left;  // __x != nullptr
       } else {
         _tmp = tree::__get_leftmost(_tmp->_right);
         *_child = _tmp->_right;  // __x might be nullptr
@@ -368,8 +369,9 @@ class rb_tree : protected __container_base::_TreeBase<T, Allocator> {
       _tmp->_left = _node->_left;
       if (_tmp != _node->_right) {
         *_parent = _tmp->_parent;
-        *_child != nullptr ?
-            static_cast<void>((*_child)->_parent = _tmp->_parent) : void();
+        *_child != nullptr
+            ? static_cast<void>((*_child)->_parent = _tmp->_parent)
+            : void();
         _tmp->_parent->_left = *_child;
         _tmp->_right = _node->_right;
         _node->_right->_parent = _tmp;
@@ -387,8 +389,8 @@ class rb_tree : protected __container_base::_TreeBase<T, Allocator> {
       std::swap(_tmp->_tag, _node->_tag);
     } else {  // __y == _node
       *_parent = _tmp->_parent;
-      *_child != nullptr ?
-          static_cast<void>((*_child)->_parent = _tmp->_parent) : void();
+      *_child != nullptr ? static_cast<void>((*_child)->_parent = _tmp->_parent)
+                         : void();
       if (_header->_parent == _node) {
         _header->_parent = *_child;
       } else {
@@ -399,12 +401,14 @@ class rb_tree : protected __container_base::_TreeBase<T, Allocator> {
         }
       }
       if (_node == _header->_left) {
-        _header->_left = _node->_right == nullptr ?
-            _node->_parent : tree::__get_leftmost(*_child);
+        _header->_left = _node->_right == nullptr
+                             ? _node->_parent
+                             : tree::__get_leftmost(*_child);
       }
       if (_node == _header->_right) {
-        _header->_right = _node->_left == nullptr ?
-            _node->_parent : tree::__get_rightmost(*_child);
+        _header->_right = _node->_left == nullptr
+                              ? _node->_parent
+                              : tree::__get_rightmost(*_child);
       }
     }
   }
@@ -417,9 +421,9 @@ class rb_tree : protected __container_base::_TreeBase<T, Allocator> {
       if (_sibling->_tag == _RBTreeColor_RED) {
         _parent->_tag = _RBTreeColor_RED;
         _sibling->_tag = _RBTreeColor_BLACK;
-        _node == _parent->_left ?
-            tree::__rotate_left(_parent, _header->_parent) :
-            tree::__rotate_right(_parent, _header->_parent);
+        _node == _parent->_left
+            ? tree::__rotate_left(_parent, _header->_parent)
+            : tree::__rotate_right(_parent, _header->_parent);
         _sibling = tree::__get_sibling(_node);
       }
       if ((_sibling->_left == nullptr ||
@@ -489,8 +493,8 @@ class rb_tree : protected __container_base::_TreeBase<T, Allocator> {
     rb_tree::__copy_n(_impl, _first, _last - _first);
   }
   template <typename _InputIt>
-  static void __copy_n(_BaseImpl& _impl,
-                       _InputIt _first, const size_type& _cnt) {
+  static void __copy_n(_BaseImpl& _impl, _InputIt _first,
+                       const size_type& _cnt) {
     _NodeBase* _n;
     for (size_type _n = 0; _n < _cnt; ++_n) {
       _n = _Base::__get(_impl, *_first);
@@ -557,8 +561,8 @@ inline void swap(rb_tree<T, Allocator>& lhs, rb_tree<T, Allocator>& rhs) {
 
 // erase_if
 template <typename T, typename Allocator, typename Pred>
-auto erase_if(rb_tree<T, Allocator>& c, Pred pred)
-    -> typename rb_tree<T, Allocator>::size_type {
+auto erase_if(rb_tree<T, Allocator>& c, Pred pred) ->
+    typename rb_tree<T, Allocator>::size_type {
   auto _old = c.size();
   for (auto _it = c.begin(), _last = c.end(); _it != _last;) {
     pred(*_it) ? _it = c.erase(_it) : ++_it;
@@ -566,8 +570,8 @@ auto erase_if(rb_tree<T, Allocator>& c, Pred pred)
   return _old - c.size();
 }
 
-} // namespace stl
-} // namespace ginshio
+}  // namespace stl
+}  // namespace ginshio
 
 
 
@@ -583,14 +587,14 @@ inline void swap(ginshio::stl::rb_tree<T, Allocator>& lhs,
 
 // erase_if
 template <typename T, typename Allocator, typename Pred>
-auto erase_if(ginshio::stl::rb_tree<T, Allocator>& c, Pred pred)
-    -> typename ginshio::stl::rb_tree<T, Allocator>::size_type {
+auto erase_if(ginshio::stl::rb_tree<T, Allocator>& c, Pred pred) ->
+    typename ginshio::stl::rb_tree<T, Allocator>::size_type {
   auto _old = c.size();
   for (auto _it = c.begin(), _last = c.end(); _it != _last;) {
     pred(*_it) ? _it = c.erase(_it) : ++_it;
   }
   return _old - c.size();
 }
-} // namespace std
+}  // namespace std
 
-#endif // GINSHIO_STL__STL_RB_TREE_HH_
+#endif  // GINSHIO_STL__CONTAINER_STL_RB_TREE_HH_

@@ -1,16 +1,14 @@
-#ifndef GINSHIO_STL__STL_CHECK_HH_
-#define GINSHIO_STL__STL_CHECK_HH_ 1
-
-#include <memory>
-#include <stdexcept>
+#ifndef GINSHIO_STL__BASE_STL_CHECK_HH_
+#define GINSHIO_STL__BASE_STL_CHECK_HH_ 1
 
 #include <cstdio>
+#include <memory>
+#include <stdexcept>
 
 namespace ginshio {
 namespace stl {
 
-inline void __check_out_of_range(const char* _func,
-                                 const std::size_t& _pos,
+inline void __check_out_of_range(const char* _func, const std::size_t& _pos,
                                  const std::size_t& _sz) {
   if (_sz <= _pos) {
     const char* _fmt = "function \"%s\": pos(%zu) out of container range(%zu)";
@@ -21,8 +19,7 @@ inline void __check_out_of_range(const char* _func,
   }
 }
 
-inline void __check_length_error(const char* _func,
-                                 const std::size_t& _need,
+inline void __check_length_error(const char* _func, const std::size_t& _need,
                                  const std::size_t& _max_sz) {
   if (_max_sz < _need) {
     const char* _fmt =
@@ -37,4 +34,4 @@ inline void __check_length_error(const char* _func,
 }  // namespace stl
 }  // namespace ginshio
 
-#endif // GINSHIO_STL__STL_CHECK_HH_
+#endif  // GINSHIO_STL__BASE_STL_CHECK_HH_

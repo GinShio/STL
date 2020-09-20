@@ -38,4 +38,4 @@
 #include "container/stl_map.hh"
 #include "container/stl_multimap.hh"
 
-#endif // GINSHIO_STL__MAP_HPP_
+#endif  // GINSHIO_STL__MAP_HPP_

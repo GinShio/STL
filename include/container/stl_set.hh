@@ -24,18 +24,17 @@
  * purpose.  It is provided "as is" without express or implied warranty.
  */
 
-#ifndef GINSHIO_STL__STL_SET_HH_
-#define GINSHIO_STL__STL_SET_HH_ 1
+#ifndef GINSHIO_STL__CONTAINER_STL_SET_HH_
+#define GINSHIO_STL__CONTAINER_STL_SET_HH_ 1
 
 #include "base/stl_tree_algo.hh"
+#include "container/stl_multiset.hh"
 #include "rb_tree.hpp"
 
 #include <initializer_list>
 #include <memory>
 #include <type_traits>
 #include <utility>
-
-#include "container/stl_multiset.hh"
 
 namespace ginshio {
 namespace stl {
@@ -46,8 +45,8 @@ class set {
   /////////////// private type ///////////////
  private:
   template <typename _Alloc>
-  using _UseAlloc = typename
-      std::enable_if<std::uses_allocator<Container, _Alloc>::value>::type*;
+  using _UseAlloc = typename std::enable_if<
+      std::uses_allocator<Container, _Alloc>::value>::type*;
   /////////////// member type ///////////////
  public:
   using key_type = Key;
@@ -74,18 +73,18 @@ class set {
  public:
   set() = default;
   explicit set(const allocator_type& alloc) : c(alloc) {}
-  template <typename InputIt, typename = typename
-            std::enable_if<std::is_base_of<
-                             std::input_iterator_tag, typename
-                             std::iterator_traits<InputIt>::iterator_category>::
-                           value>::type*>
+  template <typename InputIt,
+            typename = typename std::enable_if<
+                std::is_base_of<std::input_iterator_tag,
+                                typename std::iterator_traits<
+                                    InputIt>::iterator_category>::value>::type*>
   set(InputIt first, InputIt last,
       const allocator_type& alloc = allocator_type()) : c(first, last, alloc) {}
   set(const set& other) : c(other.c) {}
   set(const set& other, const allocator_type& alloc) : c(other.c, alloc) {}
   set(set&& other) noexcept = default;
-  set(set&& other, const allocator_type& alloc) :
-      c(std::move(other.c), alloc) {}
+  set(set&& other, const allocator_type& alloc)
+      : c(std::move(other.c), alloc) {}
   set(std::initializer_list<value_type> ilist,
       const allocator_type& alloc = allocator_type()) : c(alloc) {
     for (auto& _val : ilist) {
@@ -195,9 +194,7 @@ class set {
   /////////////// find ///////////////
   /////////////// TODO: template overload K in C++14 ///////////////
  public:
-  size_type count(const key_type& key) const {
-    return c.count(key);
-  }
+  size_type count(const key_type& key) const { return c.count(key); }
   iterator find(const key_type& key) { return c.find(key); }
   const_iterator find(const key_type& key) const { return c.find(key); }
   bool contains(const key_type& key) const { return c.find(key) != c.end(); }
@@ -269,13 +266,15 @@ inline void swap(set<Key, Container>& lhs, set<Key, Container>& rhs) {
 }
 
 template <typename Key, typename Container, typename Pred>
-auto erase_if(set<Key, Container>& c, Pred pred)
-    -> typename set<Key, Container>::size_type {
+auto erase_if(set<Key, Container>& c, Pred pred) ->
+    typename set<Key, Container>::size_type {
   return erase_if(c.get_container(), pred);
 }
 
-} // namespace stl
-} // namespace ginshio
+}  // namespace stl
+}  // namespace ginshio
+
+
 
 
 
@@ -288,10 +287,10 @@ inline void swap(ginshio::stl::set<Key, Container>& lhs,
 }
 
 template <typename Key, typename Container, typename Pred>
-auto erase_if(ginshio::stl::set<Key, Container>& c, Pred pred)
-    -> typename ginshio::stl::set<Key, Container>::size_type {
+auto erase_if(ginshio::stl::set<Key, Container>& c, Pred pred) ->
+    typename ginshio::stl::set<Key, Container>::size_type {
   return ginshio::stl::erase_if(c.get_container(), pred);
 }
-} // namespace std
+}  // namespace std
 
-#endif // GINSHIO_STL__STL_SET_HH_
+#endif  // GINSHIO_STL__CONTAINER_STL_SET_HH_

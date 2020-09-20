@@ -24,10 +24,11 @@
  * purpose.  It is provided "as is" without express or implied warranty.
  */
 
-#ifndef GINSHIO_STL__STL_MAP_HH_
-#define GINSHIO_STL__STL_MAP_HH_ 1
+#ifndef GINSHIO_STL__CONTAINER_STL_MAP_HH_
+#define GINSHIO_STL__CONTAINER_STL_MAP_HH_ 1
 
 #include "base/stl_tree_algo.hh"
+#include "container/stl_multimap.hh"
 #include "rb_tree.hpp"
 
 #include <initializer_list>
@@ -35,20 +36,19 @@
 #include <type_traits>
 #include <utility>
 
-#include "container/stl_multimap.hh"
-
 namespace ginshio {
 namespace stl {
 
 ///////////////////////// map /////////////////////////
-template <typename Key, typename T, class Container =
-          ginshio::stl::rb_tree<tree::associative_pair<const Key, T>>>
+template <typename Key, typename T,
+          class Container =
+              ginshio::stl::rb_tree<tree::associative_pair<const Key, T>>>
 class map {
   /////////////// private type ///////////////
  private:
   template <typename _Alloc>
-  using _UseAlloc = typename
-      std::enable_if<std::uses_allocator<Container, _Alloc>::value>::type*;
+  using _UseAlloc = typename std::enable_if<
+      std::uses_allocator<Container, _Alloc>::value>::type*;
   /////////////// member type ///////////////
  public:
   using key_type = Key;
@@ -76,18 +76,18 @@ class map {
  public:
   map() = default;
   explicit map(const allocator_type& alloc) : c(alloc) {}
-  template <typename InputIt, typename = typename
-            std::enable_if<std::is_base_of<
-                             std::input_iterator_tag, typename
-                             std::iterator_traits<InputIt>::iterator_category>::
-                           value>::type*>
+  template <typename InputIt,
+            typename = typename std::enable_if<
+                std::is_base_of<std::input_iterator_tag,
+                                typename std::iterator_traits<
+                                    InputIt>::iterator_category>::value>::type*>
   map(InputIt first, InputIt last,
       const allocator_type& alloc = allocator_type()) : c(first, last, alloc) {}
   map(const map& other) : c(other.c) {}
   map(const map& other, const allocator_type& alloc) : c(other.c, alloc) {}
   map(map&& other) noexcept = default;
-  map(map&& other, const allocator_type& alloc) :
-      c(std::move(other.c), alloc) {}
+  map(map&& other, const allocator_type& alloc)
+      : c(std::move(other.c), alloc) {}
   map(std::initializer_list<value_type> ilist,
       const allocator_type& alloc = allocator_type()) : c(alloc) {
     for (auto& _val : ilist) {
@@ -233,13 +233,14 @@ class map {
     iterator _pos = this->find(key);
     if (_pos == this->end()) {
       return {c.emplace_equal(std::forward<key_type>(key),
-                              std::forward<Args>(args)...), true};
+                              std::forward<Args>(args)...),
+              true};
     }
     return {_pos, false};
   }
   template <typename... Args>
-  iterator try_emplace(const_iterator hint,
-                       const key_type& key, Args&&... args) {
+  iterator try_emplace(const_iterator hint, const key_type& key,
+                       Args&&... args) {
     iterator _pos = this->find(key);
     if (_pos == this->end()) {
       return c.emplace_hint_equal(hint, key, std::forward<Args>(args)...);
@@ -275,9 +276,7 @@ class map {
   /////////////// find ///////////////
   /////////////// TODO: template overload K in C++14 ///////////////
  public:
-  size_type count(const key_type& key) const {
-    return c.count(key);
-  }
+  size_type count(const key_type& key) const { return c.count(key); }
   iterator find(const key_type& key) { return c.find(key); }
   const_iterator find(const key_type& key) const { return c.find(key); }
   bool contains(const key_type& key) const { return c.find(key) != c.end(); }
@@ -349,13 +348,15 @@ inline void swap(map<Key, T, Container>& lhs, map<Key, T, Container>& rhs) {
 }
 
 template <typename Key, typename T, typename Container, typename Pred>
-auto erase_if(map<Key, T, Container>& c, Pred pred)
-    -> typename map<Key, T, Container>::size_type {
+auto erase_if(map<Key, T, Container>& c, Pred pred) ->
+    typename map<Key, T, Container>::size_type {
   return erase_if(c.get_container(), pred);
 }
 
-} // namespace stl
-} // namespace ginshio
+}  // namespace stl
+}  // namespace ginshio
+
+
 
 
 
@@ -368,10 +369,10 @@ inline void swap(ginshio::stl::map<Key, T, Container>& lhs,
 }
 
 template <typename Key, typename T, typename Container, typename Pred>
-auto erase_if(ginshio::stl::map<Key, T, Container>& c, Pred pred)
-    -> typename ginshio::stl::map<Key, T, Container>::size_type {
+auto erase_if(ginshio::stl::map<Key, T, Container>& c, Pred pred) ->
+    typename ginshio::stl::map<Key, T, Container>::size_type {
   return ginshio::stl::erase_if(c.get_container(), pred);
 }
-} // namespace std
+}  // namespace std
 
-#endif // GINSHIO_STL__STL_MAP_HH_
+#endif  // GINSHIO_STL__CONTAINER_STL_MAP_HH_

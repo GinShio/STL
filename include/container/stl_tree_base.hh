@@ -1,17 +1,15 @@
-#ifndef GINSHIO_STL__STL_TREE_BASE_HH_
-#define GINSHIO_STL__STL_TREE_BASE_HH_ 1
+#ifndef GINSHIO_STL__CONTAINER_STL_TREE_BASE_HH_
+#define GINSHIO_STL__CONTAINER_STL_TREE_BASE_HH_ 1
 
 #include "base/stl_init.hh"
 #include "base/stl_tree_algo.hh"
 
-#include <memory>
-#include <limits>
-
 #include <cstddef>
+#include <limits>
+#include <memory>
 
 namespace ginshio {
 namespace stl {
-
 namespace __container_base {
 ///////////////////////// tree iterator /////////////////////////
 template <typename _T, typename _Ptr, typename _Ref>
@@ -162,9 +160,7 @@ struct _TreeBase {
     tree::_TreeNodeHeader _header;
     _TreeImpl() = default;
     _TreeImpl(const _NodeAllocType& _alloc) : _NodeAllocType(_alloc) {}
-    void __swap(_TreeImpl& _impl) {
-      std::swap(_impl._header, this->_header);
-    }
+    void __swap(_TreeImpl& _impl) { std::swap(_impl._header, this->_header); }
   };
 
   /////////////// data member ///////////////
@@ -211,8 +207,8 @@ struct _TreeBase {
       _NodeAllocTraits::deallocate(_impl, _node, 1);
       throw;
     }
-    _node->_NodeBase::_parent =
-        _node->_NodeBase::_left = _node->_NodeBase::_right = nullptr;
+    _node->_NodeBase::_parent = _node->_NodeBase::_left =
+        _node->_NodeBase::_right = nullptr;
     return static_cast<_NodeBase*>(_node);
   }
   static void __put(_TreeImpl& _impl, _NodeType* _node) {
@@ -237,7 +233,7 @@ struct _TreeBase {
     return *_ConstIterator(_impl._header._right);
   }
 
-    /////////////// iterator ///////////////
+  /////////////// iterator ///////////////
  public:
   _Iterator begin() noexcept { return iterator(_impl._header._left); }
   constexpr _ConstIterator begin() const noexcept {
@@ -296,14 +292,16 @@ struct _TreeBase {
 
   /////////////// find ///////////////
  public:
-  template <typename Key, typename = typename
-            std::enable_if<std::is_convertible<_ValueType, Key>::value>::type*>
+  template <typename Key,
+            typename = typename std::enable_if<
+                std::is_convertible<_ValueType, Key>::value>::type*>
   _SizeType count(const Key& key) const {
     std::pair<_ConstIterator, _ConstIterator> _pair = this->equal_range(key);
     return static_cast<_SizeType>(std::distance(_pair.first, _pair.second));
   }
-  template <typename Key, typename = typename
-            std::enable_if<std::is_convertible<_ValueType, Key>::value>::type*>
+  template <typename Key,
+            typename = typename std::enable_if<
+                std::is_convertible<_ValueType, Key>::value>::type*>
   _Iterator find(const Key& key) {
     _NodeBase* _begin = _impl._header._parent;
     _NodeBase* _end = static_cast<_NodeBase*>(&_impl._header);
@@ -319,8 +317,9 @@ struct _TreeBase {
     }
     return _Iterator(_end);
   }
-  template <typename Key, typename = typename
-            std::enable_if<std::is_convertible<_ValueType, Key>::value>::type*>
+  template <typename Key,
+            typename = typename std::enable_if<
+                std::is_convertible<_ValueType, Key>::value>::type*>
   _ConstIterator find(const Key& key) const {
     _NodeBase* _begin = _impl._header._parent;
     _NodeBase* _end = static_cast<_NodeBase*>(&_impl._header);
@@ -336,8 +335,9 @@ struct _TreeBase {
     }
     return _ConstIterator(_end);
   }
-  template <typename Key, typename = typename
-            std::enable_if<std::is_convertible<_ValueType, Key>::value>::type*>
+  template <typename Key,
+            typename = typename std::enable_if<
+                std::is_convertible<_ValueType, Key>::value>::type*>
   std::pair<_Iterator, _Iterator> equal_range(const Key& key) {
     _Iterator _pos = this->find(key);
     if (_pos._node == static_cast<_NodeBase*>(&_impl._header)) {
@@ -346,51 +346,51 @@ struct _TreeBase {
     return {iterator(tree::__lower_bound(_pos._node->_left, _pos._node, key)),
             iterator(tree::__upper_bound(_pos._node->_right, _pos._node, key))};
   }
-  template <typename Key, typename = typename
-            std::enable_if<std::is_convertible<_ValueType, Key>::value>::type*>
+  template <typename Key,
+            typename = typename std::enable_if<
+                std::is_convertible<_ValueType, Key>::value>::type*>
   std::pair<_ConstIterator, _ConstIterator> equal_range(const Key& key) const {
     _ConstIterator _pos = find(key);
     if (_pos._node == static_cast<_NodeBase*>(&_impl._header)) {
       return {_pos, _pos};
     }
-    return {const_iterator(tree::__lower_bound(_pos._node->_left,
-                                               _pos._node, key)),
-            const_iterator(tree::__upper_bound(_pos._node->_right,
-                                               _pos._node, key))};
+    return std::pair<_ConstIterator, _ConstIterator>{
+        const_iterator(tree::__lower_bound(_pos._node->_left, _pos._node, key)),
+        const_iterator(
+            tree::__upper_bound(_pos._node->_right, _pos._node, key))};
   }
-  template <typename Key, typename = typename
-            std::enable_if<std::is_convertible<_ValueType, Key>::value>::type*>
+  template <typename Key,
+            typename = typename std::enable_if<
+                std::is_convertible<_ValueType, Key>::value>::type*>
   constexpr _Iterator lower_bound(const Key& key) {
-    return iterator(
-        tree::__lower_bound(_impl._header._parent,
-                            static_cast<_NodeBase*>(&_impl._header), key));
+    return iterator(tree::__lower_bound(
+        _impl._header._parent, static_cast<_NodeBase*>(&_impl._header), key));
   }
-  template <typename Key, typename = typename
-            std::enable_if<std::is_convertible<_ValueType, Key>::value>::type*>
+  template <typename Key,
+            typename = typename std::enable_if<
+                std::is_convertible<_ValueType, Key>::value>::type*>
   constexpr _ConstIterator lower_bound(const Key& key) const {
-    return const_iterator(
-        tree::__lower_bound(_impl._header._parent,
-                            static_cast<_NodeBase*>(&_impl._header), key));
+    return const_iterator(tree::__lower_bound(
+        _impl._header._parent, static_cast<_NodeBase*>(&_impl._header), key));
   }
-  template <typename Key, typename = typename
-            std::enable_if<std::is_convertible<_ValueType, Key>::value>::type*>
+  template <typename Key,
+            typename = typename std::enable_if<
+                std::is_convertible<_ValueType, Key>::value>::type*>
   constexpr _Iterator upper_bound(const Key& key) {
-    return iterator(
-        tree::__upper_bound(_impl._header._parent,
-                            static_cast<_NodeBase*>(&_impl._header), key));
+    return iterator(tree::__upper_bound(
+        _impl._header._parent, static_cast<_NodeBase*>(&_impl._header), key));
   }
-  template <typename Key, typename = typename
-            std::enable_if<std::is_convertible<_ValueType, Key>::value>::type*>
+  template <typename Key,
+            typename = typename std::enable_if<
+                std::is_convertible<_ValueType, Key>::value>::type*>
   constexpr _ConstIterator upper_bound(const Key& key) const {
-    return const_iterator(
-        tree::__upper_bound(_impl._header._parent,
-                            static_cast<_NodeBase*>(&_impl._header), key));
+    return const_iterator(tree::__upper_bound(
+        _impl._header._parent, static_cast<_NodeBase*>(&_impl._header), key));
   }
 };
 
-} //namespace __container_base
+}  // namespace __container_base
+}  // namespace stl
+}  // namespace ginshio
 
-} // namespace stl
-} // namespace ginshio
-
-#endif // GINSHIO_STL__STL_TREE_BASE_HH_
+#endif  // GINSHIO_STL__CONTAINER_STL_TREE_BASE_HH_

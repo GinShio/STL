@@ -574,11 +574,13 @@ class deque : protected __container_base::_DequeBase<T, Allocator> {
     if (this == &other) {
       return *this;
     }
-    if (_DataAllocTraits::propagate_on_container_copy_assignment::value) {
-      if (other.get_allocator() != this->get_allocator()) {
-        _Base::__deallocate(_impl);
-      }
-      _impl = static_cast<allocator_type>(other._impl);
+    if (_DataAllocTraits::propagate_on_container_copy_assignment::value &&
+        other.get_allocator() != this->get_allocator()) {
+      this->clear();
+      _Base::__deallocate(_impl);
+      static_cast<allocator_type&>(_impl) =
+          static_cast<allocator_type&>(other._impl);
+      _Base::__allocate(_impl, other.size());
     }
     this->__assign_aux(other._impl._begin, other._impl._end,
                        std::random_access_iterator_tag());
@@ -586,14 +588,15 @@ class deque : protected __container_base::_DequeBase<T, Allocator> {
   }
   deque& operator=(deque&& other) {
     if (this->get_allocator() == other.get_allocator()) {
-      this->clear();
       _impl.__swap(other._impl);
       return *this;
     }
+    this->clear();
     if (_DataAllocTraits::propagate_on_container_move_assignment::value) {
       _Base::__deallocate(_impl);
       _impl.__swap(other._impl);
-      _impl = std::move(static_cast<allocator_type>(other._impl));
+      static_cast<allocator_type&>(_impl) = std::move(
+          static_cast<allocator_type&>(other._impl));
     } else {
       this->__assign_aux(std::move_iterator<iterator>(other.begin()),
                          std::move_iterator<iterator>(other.end()),

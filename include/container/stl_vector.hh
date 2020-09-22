@@ -238,13 +238,12 @@ class vector : protected __container_base::_VectorBase<T, Allocator> {
     if (this == &other) {
       return *this;
     }
-    if (_AllocatorTraits::propagate_on_container_copy_assignment::value) {
-      if (other.get_allocator() != this->get_allocator()) {
-        ginshio::stl::destroy(_impl._begin, _impl._end);
-        _Base::__put(_impl);
-      }
-      static_cast<allocator_type>(_impl) =
-          static_cast<allocator_type>(other._impl);
+    if (_AllocatorTraits::propagate_on_container_copy_assignment::value &&
+        other.get_allocator() != this->get_allocator()) {
+      ginshio::stl::destroy(_impl._begin, _impl._end);
+      _Base::__put(_impl);
+      static_cast<allocator_type&>(_impl) =
+          static_cast<allocator_type&>(other._impl);
     }
     this->__assign_range_dispatch(other._impl._begin, other._impl._end,
                                   std::random_access_iterator_tag());
@@ -452,6 +451,9 @@ class vector : protected __container_base::_VectorBase<T, Allocator> {
   void __assign_range_dispatch(_ForwardIt _first, _ForwardIt _last,
                                std::forward_iterator_tag) {
     const size_type _len = static_cast<size_type>(std::distance(_first, _last));
+    if (_len == 0) {
+      return;
+    }
     if (this->capacity() < _len) {
       return vector{_first, _last, this->get_allocator()}._impl.__swap(_impl);
     }

@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <memory>
+#include <utility>
 
 namespace ginshio {
 namespace stl {
@@ -26,6 +27,11 @@ bool operator<(const associative_pair<T, U>& l, const T& r) {
 template <typename T, typename U>
 bool operator<(const T& l, const associative_pair<T, U>& r) {
   return l < r.first;
+}
+template <typename T, typename U>
+constexpr auto make_pair(T&& t, U&& u) ->
+  associative_pair<typename std::decay<T>::type, typename std::decay<U>::type> {
+  return {std::move(t), std::move(u)};
 }
 
 

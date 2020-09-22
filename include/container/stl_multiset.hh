@@ -62,7 +62,7 @@ class multiset {
  protected:
   container_type c;
 
-  /////////////// TODO: constructor ///////////////
+  /////////////// constructor ///////////////
  public:
   multiset() = default;
   explicit multiset(const allocator_type& alloc) : c(alloc) {}
@@ -87,8 +87,45 @@ class multiset {
  public:
   ~multiset() noexcept = default;
 
-  /////////////// TODO: member function ///////////////
+  /////////////// member function ///////////////
  public:
+  template <typename InputIt,
+            typename = typename std::enable_if<
+              std::is_base_of<std::input_iterator_tag,
+                              typename std::iterator_traits<
+                                InputIt>::iterator_category>::value>::type*>
+  void assign(InputIt first, InputIt last) {
+    c.assign_equal(first, last);
+  }
+  void assign(std::initializer_list<value_type> ilist) {
+    c.assign_equal(ilist);
+  }
+  template <typename Tree,
+            typename = typename std::enable_if<
+                std::is_base_of<
+                    __container_base::_TreeBase<value_type, allocator_type>,
+                    Tree>::value>::type*>
+  multiset& operator=(const set<key_type, Tree>& other) {
+    c.assign_equal_copy_allocator(other.c);
+    return *this;
+  }
+  template <typename Tree,
+            typename = typename std::enable_if<
+                std::is_base_of<
+                    __container_base::_TreeBase<value_type, allocator_type>,
+                    Tree>::value>::type*>
+  multiset& operator=(const multiset<key_type, Tree>& other) {
+    c.assign_equal_copy_allocator(other.c);
+    return *this;
+  }
+  multiset& operator=(multiset&& other) {
+    c.assign_equal_move_allocator(std::move(other.c));
+    return *this;
+  }
+  multiset& operator=(std::initializer_list<value_type> ilist) {
+    c.assign_equal(ilist);
+    return *this;
+  }
   constexpr const container_type& get_container() const noexcept { return c; }
   constexpr const allocator_type get_allocator() const noexcept {
     return c.get_allocator();
@@ -168,15 +205,32 @@ class multiset {
   size_type erase(const key_type& key) { return c.erase(key); }
   // TODO: extract
   void swap(multiset& other) { c.swap(other.c); }
+  template <typename Tree, typename Alloc,
+            typename = typename std::enable_if<
+                std::is_base_of<
+                    __container_base::_TreeBase<value_type, Alloc>,
+                    Tree>::value &&
+                !std::is_same<Tree, Container>::value>::type*>
+  void merge(const multiset<key_type, Tree>& other) {
+    c.merge_equal(other.c);
+  }
   void merge(multiset& other) { c.merge_equal(std::move(other.c)); }
   void merge(multiset&& other) { c.merge_equal(std::move(other.c)); }
+  template <typename Tree, typename Alloc,
+            typename = typename std::enable_if<
+                std::is_base_of<
+                    __container_base::_TreeBase<value_type, Alloc>,
+                    Tree>::value &&
+                !std::is_same<Tree, Container>::value>::type*>
+  void merge(const set<key_type, Tree>& other) {
+    c.merge_equal(other.c);
+  }
   void merge(set<key_type, container_type>& other) {
     c.merge_equal(std::move(other.c));
   }
   void merge(set<key_type, container_type>&& other) {
     c.merge_equal(std::move(other.c));
   }
-  // TODO: merge difference container(e.g. avl_tree)
 
   /////////////// find ///////////////
   /////////////// TODO: template overload K in C++14 ///////////////

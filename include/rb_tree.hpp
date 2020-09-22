@@ -38,5 +38,6 @@
 #include <utility>
 
 #include "container/stl_rb_tree.hh"
+#include "container/stl_rb_tree.tcc"
 
 #endif  // GINSHIO_STL__RB_TREE_HPP_

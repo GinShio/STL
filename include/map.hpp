@@ -27,6 +27,7 @@
 #ifndef GINSHIO_STL__MAP_HPP_
 #define GINSHIO_STL__MAP_HPP_ 1
 
+#include "base/stl_check.hh"
 #include "base/stl_tree_algo.hh"
 #include "rb_tree.hpp"
 

@@ -27,14 +27,7 @@
 #ifndef GINSHIO_STL__CONTAINER_STL_MAP_HH_
 #define GINSHIO_STL__CONTAINER_STL_MAP_HH_ 1
 
-#include "base/stl_tree_algo.hh"
 #include "container/stl_multimap.hh"
-#include "rb_tree.hpp"
-
-#include <initializer_list>
-#include <memory>
-#include <type_traits>
-#include <utility>
 
 namespace ginshio {
 namespace stl {
@@ -99,15 +92,79 @@ class map {
  public:
   ~map() noexcept = default;
 
-  /////////////// TODO: member function ///////////////
+  /////////////// member function ///////////////
  public:
+  template <typename InputIt,
+            typename = typename std::enable_if<
+              std::is_base_of<std::input_iterator_tag,
+                              typename std::iterator_traits<
+                                InputIt>::iterator_category>::value>::type*>
+  void assign(InputIt first, InputIt last) {
+    c.assign_unique(first, last);
+  }
+  void assign(std::initializer_list<value_type> ilist) {
+    c.assign_unique(ilist);
+  }
+  template <typename Tree,
+            typename = typename std::enable_if<
+                std::is_base_of<
+                    __container_base::_TreeBase<value_type, allocator_type>,
+                    Tree>::value>::type*>
+  map& operator=(const multimap<key_type, mapped_type, Tree>& other) {
+    c.assign_unique_copy_allocator(other.c);
+    return *this;
+  }
+  template <typename Tree,
+            typename = typename std::enable_if<
+                std::is_base_of<
+                    __container_base::_TreeBase<value_type, allocator_type>,
+                    Tree>::value>::type*>
+  map& operator=(const map<key_type, mapped_type, Tree>& other) {
+    c.assign_equal_copy_allocator(other.c);
+    return *this;
+  }
+  map& operator=(map&& other) {
+    c.assign_equal_move_allocator(std::move(other.c));
+    return *this;
+  }
+  map& operator=(std::initializer_list<value_type> ilist) {
+    c.assign_unique(ilist);
+    return *this;
+  }
   constexpr const container_type& get_container() const noexcept { return c; }
   constexpr const allocator_type get_allocator() const noexcept {
     return c.get_allocator();
   }
 
-  /////////////// TODO: element access ///////////////
+  /////////////// element access ///////////////
  public:
+  mapped_type& at(const key_type& key) {
+    iterator _pos = this->find(key);
+    ginshio::stl::__check_out_of_range("map::at", _pos, this->end());
+    return _pos->second;
+  }
+  const mapped_type& at(const key_type& key) const {
+    const_iterator _pos = this->find(key);
+    ginshio::stl::__check_out_of_range("map::at", _pos, this->cend());
+    return _pos->second;
+  }
+  mapped_type& operator[](const key_type& key) {
+    iterator _pos = this->find(key);
+    if (_pos == this->end()) {
+      return this->insert(tree::make_pair(key, mapped_type())).first->second;
+    } else {
+      return _pos->second;
+    }
+  }
+  mapped_type& operator[](key_type&& key) {
+    iterator _pos = this->find(key);
+    if (_pos == this->end()) {
+      return this->insert(
+          tree::make_pair(std::forward(key), mapped_type())).first->second;
+    } else {
+      return _pos->second;
+    }
+  }
 
   /////////////// iterator ///////////////
  public:
@@ -263,15 +320,32 @@ class map {
   size_type erase(const key_type& key) { return c.erase(key); }
   // TODO: extract
   void swap(map& other) { c.swap(other.c); }
+  template <typename Tree, typename Alloc,
+            typename = typename std::enable_if<
+                std::is_base_of<
+                    __container_base::_TreeBase<value_type, Alloc>,
+                    Tree>::value &&
+                !std::is_same<Tree, Container>::value>::type*>
+  void merge(const map<key_type, mapped_type, Tree>& other) {
+    c.merge_unique(other.c);
+  }
   void merge(map& other) { c.merge_unique(std::move(other.c)); }
   void merge(map&& other) { c.merge_unique(std::move(other.c)); }
+  template <typename Tree, typename Alloc,
+            typename = typename std::enable_if<
+                std::is_base_of<
+                    __container_base::_TreeBase<value_type, Alloc>,
+                    Tree>::value &&
+                !std::is_same<Tree, Container>::value>::type*>
+  void merge(const multimap<key_type, mapped_type, Tree>& other) {
+    c.merge_unique(other.c);
+  }
   void merge(multimap<key_type, mapped_type, container_type>& other) {
     c.merge_unique(std::move(other.c));
   }
   void merge(multimap<key_type, mapped_type, container_type>&& other) {
     c.merge_unique(std::move(other.c));
   }
-  // TODO: merge difference container(e.g. avl_tree)
 
   /////////////// find ///////////////
   /////////////// TODO: template overload K in C++14 ///////////////

@@ -421,11 +421,11 @@ class list : protected __container_base::_ListBase<T, Allocator> {
     if (this == &other) {
       return *this;
     }
-    if (_DataAllocTraits::propagate_on_container_copy_assignment::value) {
-      if (other.get_allocator() != this->get_allocator()) {
-        _Base::__clear_aux(_impl, 0);
-      }
-      _impl = static_cast<_NodeAllocType>(other._impl);
+    if (_DataAllocTraits::propagate_on_container_copy_assignment::value &&
+        other.get_allocator() != this->get_allocator()) {
+      _Base::__clear_aux(_impl, 0);
+      static_cast<allocator_type&>(_impl) =
+          static_cast<allocator_type&>(other._impl);
     }
     this->__assign_range_dispatch(other.begin(), other.end(),
                                   std::bidirectional_iterator_tag());
@@ -433,14 +433,14 @@ class list : protected __container_base::_ListBase<T, Allocator> {
   }
   list& operator=(list&& other) {
     if (this->get_allocator() == other.get_allocator()) {
-      _Base::__clear_aux(_impl, 0);
       _impl.__swap(other._impl);
       return *this;
     }
+    _Base::__clear_aux(_impl, 0);
     if (_DataAllocTraits::propagate_on_container_move_assignment::value) {
-      _Base::__clear_aux(_impl, 0);
       _impl.__swap(other._impl);
-      _impl = std::move(static_cast<allocator_type>(other._impl));
+      static_cast<allocator_type&>(_impl) = std::move(
+          static_cast<typename decltype(other)::allocator_type&>(other._impl));
     } else {
       this->__assign_range_dispatch(std::move_iterator<iterator>(other.begin()),
                                     std::move_iterator<iterator>(other.end()),

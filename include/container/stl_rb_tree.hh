@@ -88,7 +88,7 @@ class rb_tree : protected __container_base::_TreeBase<T, Allocator> {
           const allocator_type& alloc = allocator_type())
       : _Base(_NodeAllocType(alloc)) {
     using _Category = typename std::iterator_traits<InputIt>::iterator_category;
-    rb_tree::__copy(_impl, this->begin(), first, last, _Category());
+    rb_tree::__copy_equal(_impl, this->begin(), first, last, _Category());
   }
   rb_tree(const rb_tree& other)
       : _Base(_NodeAllocType(
@@ -97,16 +97,16 @@ class rb_tree : protected __container_base::_TreeBase<T, Allocator> {
     if (other._impl._header._size == 0) {
       return;
     }
-    rb_tree::__copy(_impl, other.begin(), other.end(),
-                    std::bidirectional_iterator_tag());
+    rb_tree::__copy_equal(_impl, other.begin(), other.end(),
+                          std::bidirectional_iterator_tag());
   }
   rb_tree(const rb_tree& other, const allocator_type& alloc)
       : _Base(_NodeAllocType(alloc)) {
     if (other._impl._header._size == 0) {
       return;
     }
-    rb_tree::__copy(_impl, other.begin(), other.end(),
-                    std::bidirectional_iterator_tag());
+    rb_tree::__copy_equal(_impl, other.begin(), other.end(),
+                          std::bidirectional_iterator_tag());
   }
   rb_tree(rb_tree&& other) noexcept = default;
   rb_tree(rb_tree&& other, const allocator_type& alloc)
@@ -115,13 +115,13 @@ class rb_tree : protected __container_base::_TreeBase<T, Allocator> {
       _impl.__swap(other._impl);
       return;
     }
-    rb_tree::__copy(_impl, other.begin(), other.end(),
-                    std::bidirectional_iterator_tag());
+    rb_tree::__copy_equal(_impl, other.begin(), other.end(),
+                          std::bidirectional_iterator_tag());
   }
   rb_tree(std::initializer_list<value_type> ilist,
           const allocator_type& alloc = allocator_type())
       : _Base(_NodeAllocType(alloc)) {
-    rb_tree::__copy_n(_impl, ilist.begin(), ilist.size());
+    rb_tree::__copy_equal_n(_impl, ilist.begin(), ilist.size());
   }
 
   /////////////// destructor ///////////////
@@ -130,7 +130,156 @@ class rb_tree : protected __container_base::_TreeBase<T, Allocator> {
 
   /////////////// member function ///////////////
  public:
-  // TODO: assign && operator=
+  template <typename InputIt,
+            typename = typename std::enable_if<
+                std::is_base_of<std::input_iterator_tag,
+                                typename std::iterator_traits<
+                                    InputIt>::iterator_category>::value>::type*>
+  void assign_equal(InputIt first, InputIt last) {
+    using _Category = typename std::iterator_traits<InputIt>::iterator_category;
+    this->clear();
+    rb_tree::__copy_equal(_impl, first, last, _Category());
+  }
+  template <typename InputIt,
+            typename = typename std::enable_if<
+                std::is_base_of<std::input_iterator_tag,
+                                typename std::iterator_traits<
+                                    InputIt>::iterator_category>::value>::type*>
+  void assign_unique(InputIt first, InputIt last) {
+    using _Category = typename std::iterator_traits<InputIt>::iterator_category;
+    this->clear();
+    rb_tree::__copy_unique(_impl, first, last, _Category());
+  }
+  template <typename Tree, typename Alloc,
+            typename = typename std::enable_if<
+                std::is_base_of<
+                    __container_base::_TreeBase<value_type, Alloc>,
+                    Tree>::value>::type*>
+  void assign_equal(const Tree& other) {
+    if (&other == this) {
+      return;
+    }
+    this->clear();
+    rb_tree::__copy_equal_n(_impl, other.begin(), other.size());
+  }
+  template <typename Tree,
+            typename = typename std::enable_if<
+                std::is_base_of<
+                    __container_base::_TreeBase<value_type, allocator_type>,
+                    Tree>::value>::type*>
+  void assign_equal_copy_allocator(const Tree& other) {
+    if (&other == this) {
+      return *this;
+    }
+    this->clear();
+    if (_DataAllocTraits::propagate_on_container_copy_assignment::value &&
+        other.get_allocator() != this->get_allocator()) {
+      static_cast<allocator_type&>(_impl) =
+          static_cast<typename Tree::allocator_type&>(other._impl);
+    }
+    rb_tree::__copy_equal_n(_impl, other.begin(), other.size());
+  }
+  void assign_equal_move_allocator(rb_tree&& other) {
+    if (&other == this) {
+      return *this;
+    }
+    this->clear();
+    if (_DataAllocTraits::propagate_on_container_move_assignment::value) {
+      _impl.__swap(other._impl);
+      static_cast<allocator_type&>(_impl) = std::move(
+          static_cast<allocator_type&>(other._impl));
+    } else {
+      rb_tree::__copy_equal_n(_impl, other.begin(), other.size());
+    }
+  }
+  template <typename Tree, typename Alloc,
+            typename = typename std::enable_if<
+                std::is_base_of<
+                    __container_base::_TreeBase<value_type, Alloc>,
+                    Tree>::value>::type*>
+  void assign_unique(const Tree& other) {
+    if (&other == this) {
+      return;
+    }
+    this->clear();
+    rb_tree::__copy_unique_n(_impl, other.begin(), other.size());
+  }
+  template <typename Tree,
+            typename = typename std::enable_if<
+                std::is_base_of<
+                    __container_base::_TreeBase<value_type, allocator_type>,
+                    Tree>::value>::type*>
+  void assign_unique_copy_allocator(const Tree& other) {
+    if (&other == this) {
+      return *this;
+    }
+    this->clear();
+    if (_DataAllocTraits::propagate_on_container_copy_assignment::value &&
+        other.get_allocator() != this->get_allocator()) {
+      static_cast<allocator_type&>(_impl) =
+          static_cast<typename Tree::allocator_type&>(other._impl);
+    }
+    rb_tree::__copy_unique_n(_impl, other.begin(), other.size());
+  }
+  void assign_unique_move_allocator(rb_tree&& other) {
+    if (&other == this) {
+      return *this;
+    }
+    this->clear();
+    if (_DataAllocTraits::propagate_on_container_move_assignment::value) {
+      _impl.__swap(other._impl);
+      static_cast<allocator_type&>(_impl) = std::move(
+          static_cast<allocator_type&>(other._impl));
+    } else {
+      rb_tree::__copy_unique_n(_impl, other.begin(), other.size());
+    }
+  }
+  void assign_equal(std::initializer_list<value_type> ilist) {
+    this->clear();
+    rb_tree::__copy_equal_n(_impl, ilist.begin(), ilist.end());
+  }
+  void assign_unique(std::initializer_list<value_type> ilist) {
+    this->clear();
+    rb_tree::__copy_unique_n(_impl, ilist.begin(), ilist.end());
+  }
+  template <typename Tree,
+            typename = typename std::enable_if<
+                std::is_base_of<
+                    __container_base::_TreeBase<value_type, allocator_type>,
+                    Tree>::value>::type*>
+  rb_tree& operator=(const Tree& other) {
+    if (&other == this) {
+      return *this;
+    }
+    this->clear();
+    if (_DataAllocTraits::propagate_on_container_copy_assignment::value &&
+        other.get_allocator() != this->get_allocator()) {
+      static_cast<allocator_type&>(_impl) =
+          static_cast<typename Tree::allocator_type&>(other._impl);
+    }
+    rb_tree::__copy_equal_n(_impl, other.begin(), other.size());
+    return *this;
+  }
+  rb_tree& operator=(rb_tree&& other) {
+    if (this->get_allocator() == other.get_allocator()) {
+      _impl.__swap(other._impl);
+      return *this;
+    }
+    this->clear();
+    if (_DataAllocTraits::propagate_on_container_move_assignment::value) {
+      _impl.__swap(other._impl);
+      static_cast<allocator_type&>(_impl) = std::move(
+          static_cast<allocator_type&>(other._impl));
+    } else {
+      rb_tree::__copy_equal_n(_impl, other.begin(), other.size());
+    }
+    return *this;
+  }
+  rb_tree& operator=(std::initializer_list<value_type> ilist) {
+    this->clear();
+    rb_tree::__copy_equal_n(_impl, ilist.begin(), ilist.size());
+    return *this;
+  }
 
   /////////////// modifier ///////////////
  public:
@@ -139,6 +288,28 @@ class rb_tree : protected __container_base::_TreeBase<T, Allocator> {
   }
   iterator insert_equal(value_type&& value) {
     return this->emplace_equal(std::forward<value_type>(value));
+  }
+  template <typename InputIt,
+            typename = typename std::enable_if<
+                std::is_base_of<std::input_iterator_tag,
+                                typename std::iterator_traits<
+                                    InputIt>::iterator_category>::value>::type*>
+  iterator insert_equal(InputIt first, InputIt last) {
+    while (first != last) {
+      this->emplace_equal(*first);
+      ++first;
+    }
+  }
+  template <typename InputIt,
+            typename = typename std::enable_if<
+                std::is_base_of<std::input_iterator_tag,
+                                typename std::iterator_traits<
+                                    InputIt>::iterator_category>::value>::type*>
+  iterator insert_unique(InputIt first, InputIt last) {
+    while (first != last) {
+      this->emplace_unique(*first);
+      ++first;
+    }
   }
   std::pair<iterator, bool> insert_unique(const value_type& value) {
     return this->emplace_unique(value);
@@ -245,7 +416,24 @@ class rb_tree : protected __container_base::_TreeBase<T, Allocator> {
     return rb_tree::__extract_aux(_pos._node,
                                   static_cast<_NodeBase*>(&_impl._header));
   }
-  // TODO: merge (from other tree, e.g. avl_tree)
+  template <typename Tree,
+            typename = typename std::enable_if<
+                std::is_base_of<
+                    __container_base::_TreeBase<value_type, allocator_type>,
+                    Tree>::value &&
+                !std::is_same<Tree, rb_tree>::value>::type*>
+  void merge_equal(const Tree& other) {
+    typename Tree::iterator _it = other.begin();
+    _NodeBase* _node;
+    for (typename Tree::size_type _i = 0, _n = other.size(); _i < _n; ++_i) {
+      _node = _Base::__get(_impl, *_it);
+      tree::__insert_equal(static_cast<_NodeType*>(_node), &_impl._header);
+      rb_tree::__insert_rebalance(_node,
+                                  static_cast<_NodeBase*>(&_impl._header));
+      ++_impl._header._size;
+      ++_it;
+    }
+  }
   void merge_equal(rb_tree& other) {
     if (this == &other || this->get_allocator() != other.get_allocator()) {
       return;
@@ -259,31 +447,25 @@ class rb_tree : protected __container_base::_TreeBase<T, Allocator> {
     for (_NodeHeader* _header = &_impl._header; _cur != _end;
          _cur = _next, _next = tree::__node_increment(_next)) {
       tree::__insert_equal(_cur, _header);
+      _cur->_tag = _RBTreeColor_RED;
       rb_tree::__insert_rebalance(_cur, _header);
       ++_impl._header._size;
     }
   }
+  template <typename Tree,
+            typename = typename std::enable_if<
+                std::is_base_of<
+                    __container_base::_TreeBase<value_type, allocator_type>,
+                    Tree>::value &&
+                !std::is_same<Tree, rb_tree>::value>::type*>
+  void merge_unique(const Tree& other);
   void merge_unique(rb_tree& other) {
     if (this == &other || this->get_allocator() != other.get_allocator()) {
       return;
     }
     this->merge_unique(std::move(other));
   }
-  void merge_unique(rb_tree&& other) {
-    _NodeType* _cur = static_cast<_NodeType*>(other._impl._header._left);
-    _NodeBase* _next = tree::__node_increment(_cur);
-    _NodeBase* _end = static_cast<_NodeBase*>(&other._impl._header);
-    _NodeType* _tmp = _cur;
-    for (_NodeHeader* _header = &_impl._header; _cur != _end;
-         _cur = _next, _next = tree::__node_increment(_next), _tmp = _cur) {
-      if (tree::__insert_unique(_cur, _header)) {
-        rb_tree::__insert_rebalance(_cur, _header);
-        ++_impl._header._size;
-      } else {
-        _Base::__put(_impl, _tmp);
-      }
-    }
-  }
+  void merge_unique(rb_tree&& other);
   void swap(rb_tree& other) noexcept(
       _NodeAllocTraits::propagate_on_container_swap::value ||
       _NodeAllocTraits::is_always_equal::value) {
@@ -296,39 +478,7 @@ class rb_tree : protected __container_base::_TreeBase<T, Allocator> {
 
   /////////////// insert ///////////////
  private:
-  static void __insert_rebalance(_NodeBase* _node, _NodeBase*& _header) {
-    _NodeBase* _uncle,* _gp;
-    while (_node != _header->_parent &&
-           _node->_parent->_tag == _RBTreeColor_RED) {
-      _uncle = tree::__get_uncle(_node);
-      _gp = tree::__get_grandparent(_node);
-      if (_uncle && _uncle->_tag == _RBTreeColor_RED) {
-        _node->_parent->_tag = _RBTreeColor_BLACK;
-        _uncle->_tag = _RBTreeColor_BLACK;
-        _gp->_tag = _RBTreeColor_BLACK;
-        _node = _gp;
-        continue;
-      }
-      if (_node == _node->_parent->_right) {
-        if (_node == _node->_parent->_left) {
-          _node = _node->_parent;
-          tree::__rotate_right(_node, _header->_parent);
-        }
-        _node->_parent->_tag = _RBTreeColor_BLACK;
-        _gp->_parent->_tag = _RBTreeColor_RED;
-        tree::__rotate_left(_gp, _header->_parent);
-      } else {
-        if (_node == _node->_parent->_right) {
-          _node = _node->_parent;
-          tree::__rotate_left(_node, _header->_parent);
-        }
-        _node->_parent->_tag = _RBTreeColor_BLACK;
-        _gp->_parent->_tag = _RBTreeColor_RED;
-        tree::__rotate_right(_gp, _header->_parent);
-      }
-    }
-    _header->_parent->_tag = _RBTreeColor_BLACK;
-  }
+  static void __insert_rebalance(_NodeBase* _node, _NodeBase*& _header);
 
   /////////////// erase ///////////////
  private:
@@ -352,152 +502,64 @@ class rb_tree : protected __container_base::_TreeBase<T, Allocator> {
     return static_cast<node_type>(_node);
   }
   static void __erase_convert(_NodeBase* _node, _NodeBase*& _header,
-                              _NodeBase** _child, _NodeBase** _parent) {
-    _NodeBase* _tmp = _node;
-    if (_tmp->_left == nullptr) {
-      *_child = _tmp->_right;  // __x might be nullptr
-    } else {
-      if (_tmp->_right == nullptr) {
-        *_child = _tmp->_left;  // __x != nullptr
-      } else {
-        _tmp = tree::__get_leftmost(_tmp->_right);
-        *_child = _tmp->_right;  // __x might be nullptr
-      }
-    }
-    if (_tmp != _node) {  // __y is leftmost in _node->_right's tree
-      _node->_left->_parent = _tmp;
-      _tmp->_left = _node->_left;
-      if (_tmp != _node->_right) {
-        *_parent = _tmp->_parent;
-        *_child != nullptr
-            ? static_cast<void>((*_child)->_parent = _tmp->_parent)
-            : void();
-        _tmp->_parent->_left = *_child;
-        _tmp->_right = _node->_right;
-        _node->_right->_parent = _tmp;
-      } else {
-        *_parent = _tmp;
-      }
-      if (_header->_parent == _node) {
-        _header->_parent = _tmp;
-      } else if (_node->_parent->_left == _node) {
-        _node->_parent->_left = _tmp;
-      } else {
-        _node->_parent->_right = _tmp;
-      }
-      _tmp->_parent = _node->_parent;
-      std::swap(_tmp->_tag, _node->_tag);
-    } else {  // __y == _node
-      *_parent = _tmp->_parent;
-      *_child != nullptr ? static_cast<void>((*_child)->_parent = _tmp->_parent)
-                         : void();
-      if (_header->_parent == _node) {
-        _header->_parent = *_child;
-      } else {
-        if (_node->_parent->_left == _node) {
-          _node->_parent->_left = *_child;
-        } else {
-          _node->_parent->_right = *_child;
-        }
-      }
-      if (_node == _header->_left) {
-        _header->_left = _node->_right == nullptr
-                             ? _node->_parent
-                             : tree::__get_leftmost(*_child);
-      }
-      if (_node == _header->_right) {
-        _header->_right = _node->_left == nullptr
-                              ? _node->_parent
-                              : tree::__get_rightmost(*_child);
-      }
-    }
-  }
+                              _NodeBase** _child, _NodeBase** _parent);
   static void __delete_rebalance(_NodeBase* _node, _NodeBase* _parent,
-                                 _NodeBase*& _header) {
-    _NodeBase* _sibling = nullptr;
-    while (_node != _header->_parent &&
-           (_node == nullptr || _node->_tag == _RBTreeColor_BLACK)) {
-      _sibling = _node == _parent->_left ? _parent->_right : _parent->_left;
-      if (_sibling->_tag == _RBTreeColor_RED) {
-        _parent->_tag = _RBTreeColor_RED;
-        _sibling->_tag = _RBTreeColor_BLACK;
-        _node == _parent->_left
-            ? tree::__rotate_left(_parent, _header->_parent)
-            : tree::__rotate_right(_parent, _header->_parent);
-        _sibling = tree::__get_sibling(_node);
-      }
-      if ((_sibling->_left == nullptr ||
-           _sibling->_left->_tag == _RBTreeColor_BLACK) &&
-          (_sibling->_right == nullptr ||
-           _sibling->_right->_tag == _RBTreeColor_BLACK)) {
-        _sibling->_tag = _RBTreeColor_RED;
-        _node = _parent;
-        _parent = _parent->_parent;
-        continue;
-      }
-      break;
-    }
-    if (_node == _parent->_left) {
-      if (_sibling->_right == nullptr ||
-          _sibling->_right->_tag == _RBTreeColor_BLACK) {
-        if (_sibling->_left != nullptr) {
-          _sibling->_left->_tag = _RBTreeColor_BLACK;
-        }
-        _sibling->_tag = _RBTreeColor_RED;
-        tree::__rotate_right(_sibling, _header->_parent);
-        _sibling = _parent->_right;
-      }
-      _sibling->_tag = _parent->_tag;
-      _parent->_tag = _RBTreeColor_BLACK;
-      if (_sibling->_right != nullptr) {
-        _sibling->_right->_tag = _RBTreeColor_BLACK;
-      }
-      tree::__rotate_left(_parent, _header->_parent);
-    } else {
-      if (_sibling->_left == nullptr ||
-          _sibling->_left->_tag == _RBTreeColor_BLACK) {
-        if (_sibling->_right != nullptr) {
-          _sibling->_right->_tag = _RBTreeColor_BLACK;
-        }
-        _sibling->_tag = _RBTreeColor_RED;
-        tree::__rotate_left(_sibling, _header->_parent);
-        _sibling = _parent->_left;
-      }
-      _sibling->_tag = _parent->_tag;
-      _parent->_tag = _RBTreeColor_BLACK;
-      if (_sibling->_left != nullptr) {
-        _sibling->_left->_tag = _RBTreeColor_BLACK;
-      }
-      tree::__rotate_right(_parent, _header->_parent);
-    }
-    if (_node != nullptr) {
-      _node->_tag = _RBTreeColor_BLACK;
-    }
-  }
+                                 _NodeBase*& _header);
 
   /////////////// copy ///////////////
  private:
   template <typename _InputIt>
-  static void __copy(_BaseImpl& _impl, _InputIt _first, _InputIt _last,
-                     std::input_iterator_tag) {
+  static void __copy_equal(_BaseImpl& _impl, _InputIt _first, _InputIt _last,
+                           std::input_iterator_tag) {
     _NodeBase* _n;
     for (; _first != _last; ++_first) {
       _n = _Base::__get(_impl, *_first);
-      rb_tree::__insert_rebalance(_n, static_cast<_NodeBase>(&_impl._header));
+      tree::__insert_equal(_n, static_cast<_NodeBase*>(&_impl._header));
+      rb_tree::__insert_rebalance(_n, static_cast<_NodeBase*>(&_impl._header));
       ++_impl._header._size;
     }
   }
   template <typename _RandIt>
-  static void __copy(_BaseImpl& _impl, _RandIt _first, _RandIt _last,
-                     std::random_access_iterator_tag) {
-    rb_tree::__copy_n(_impl, _first, _last - _first);
+  static void __copy_equal(_BaseImpl& _impl, _RandIt _first, _RandIt _last,
+                           std::random_access_iterator_tag) {
+    rb_tree::__copy_equal_n(_impl, _first, _last - _first);
   }
   template <typename _InputIt>
-  static void __copy_n(_BaseImpl& _impl, _InputIt _first,
-                       const size_type& _cnt) {
+  static void __copy_unique(_BaseImpl& _impl, _InputIt _first, _InputIt _last,
+                            std::input_iterator_tag) {
+    _NodeBase* _n;
+    for (; _first != _last; ++_first) {
+      _n = _Base::__get(_impl, *_first);
+      tree::__insert_unique(_n, static_cast<_NodeBase*>(&_impl._header));
+      rb_tree::__insert_rebalance(_n, static_cast<_NodeBase*>(&_impl._header));
+      ++_impl._header._size;
+    }
+  }
+  template <typename _RandIt>
+  static void __copy_unique(_BaseImpl& _impl, _RandIt _first, _RandIt _last,
+                            std::random_access_iterator_tag) {
+    rb_tree::__copy_unique_n(_impl, _first, _last - _first);
+  }
+  template <typename _InputIt>
+  static void __copy_equal_n(_BaseImpl& _impl, _InputIt _first,
+                             const size_type& _cnt) {
     _NodeBase* _n;
     for (size_type _n = 0; _n < _cnt; ++_n) {
       _n = _Base::__get(_impl, *_first);
+      tree::__insert_equal(_n, static_cast<_NodeBase*>(&_impl._header));
+      rb_tree::__insert_rebalance(_n, static_cast<_NodeBase*>(&_impl._header));
+      ++_impl._header._size;
+      ++_first;
+    }
+  }
+  template <typename _InputIt>
+  static void __copy_unique_n(_BaseImpl& _impl, _InputIt _first,
+                              const size_type& _cnt) {
+    _NodeBase* _n;
+    for (size_type _n = 0; _n < _cnt; ++_n) {
+      _n = _Base::__get(_impl, *_first);
+      tree::__insert_unique(_n, static_cast<_NodeBase*>(&_impl._header));
+      rb_tree::__insert_rebalance(_n, static_cast<_NodeBase*>(&_impl._header));
       ++_impl._header._size;
       ++_first;
     }

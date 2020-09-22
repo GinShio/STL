@@ -90,15 +90,49 @@ class multimap {
  public:
   ~multimap() noexcept = default;
 
-  /////////////// TODO: member function ///////////////
+  /////////////// member function ///////////////
  public:
+  template <typename InputIt,
+            typename = typename std::enable_if<
+              std::is_base_of<std::input_iterator_tag,
+                              typename std::iterator_traits<
+                                InputIt>::iterator_category>::value>::type*>
+  void assign(InputIt first, InputIt last) {
+    c.assign_equal(first, last);
+  }
+  void assign(std::initializer_list<value_type> ilist) {
+    c.assign_equal(ilist);
+  }
+  template <typename Tree,
+            typename = typename std::enable_if<
+                std::is_base_of<
+                    __container_base::_TreeBase<value_type, allocator_type>,
+                    Tree>::value>::type*>
+  multimap& operator=(const map<key_type, mapped_type, Tree>& other) {
+    c.assign_equal_copy_allocator(other.c);
+    return *this;
+  }
+  template <typename Tree,
+            typename = typename std::enable_if<
+                std::is_base_of<
+                    __container_base::_TreeBase<value_type, allocator_type>,
+                    Tree>::value>::type*>
+  multimap& operator=(const multimap<key_type, mapped_type, Tree>& other) {
+    c.assign_equal_copy_allocator(other.c);
+    return *this;
+  }
+  multimap& operator=(multimap&& other) {
+    c.assign_equal_move_allocator(std::move(other.c));
+    return *this;
+  }
+  multimap& operator=(std::initializer_list<value_type> ilist) {
+    c.assign_equal(ilist);
+    return *this;
+  }
   constexpr const container_type& get_container() const noexcept { return c; }
   constexpr const allocator_type get_allocator() const noexcept {
     return c.get_allocator();
   }
-
-  /////////////// TODO: element access ///////////////
- public:
 
   /////////////// iterator ///////////////
  public:
@@ -174,15 +208,32 @@ class multimap {
   size_type erase(const key_type& key) { return c.erase(key); }
   // TODO: extract
   void swap(multimap& other) { c.swap(other.c); }
+  template <typename Tree, typename Alloc,
+            typename = typename std::enable_if<
+                std::is_base_of<
+                    __container_base::_TreeBase<value_type, Alloc>,
+                    Tree>::value &&
+                !std::is_same<Tree, Container>::value>::type*>
+  void merge(const multimap<key_type, mapped_type, Tree>& other) {
+    c.merge_equal(other.c);
+  }
   void merge(multimap& other) { c.merge_equal(std::move(other.c)); }
   void merge(multimap&& other) { c.merge_equal(std::move(other.c)); }
+  template <typename Tree, typename Alloc,
+            typename = typename std::enable_if<
+                std::is_base_of<
+                    __container_base::_TreeBase<value_type, Alloc>,
+                    Tree>::value &&
+                !std::is_same<Tree, Container>::value>::type*>
+  void merge(const map<key_type, mapped_type, Tree>& other) {
+    c.merge_equal(other.c);
+  }
   void merge(map<key_type, mapped_type, container_type>& other) {
     c.merge_equal(std::move(other.c));
   }
   void merge(map<key_type, mapped_type, container_type>&& other) {
     c.merge_equal(std::move(other.c));
   }
-  // TODO: merge difference container(e.g. avl_tree)
 
   /////////////// find ///////////////
   /////////////// TODO: template <typename K> ///////////////

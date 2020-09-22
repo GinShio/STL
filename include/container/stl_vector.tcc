@@ -31,20 +31,19 @@ namespace ginshio {
 namespace stl {
 
 template <typename T, typename Allocator>
-auto vector<T, Allocator>::operator=(vector<T, Allocator>&& other)
-    -> vector<T, Allocator>& {
-  ginshio::stl::destroy(_impl._begin, _impl._end);
+auto vector<T, Allocator>::operator=(vector<T, Allocator>&& other) ->
+    vector<T, Allocator>& {
   if (this->get_allocator() == other.get_allocator()) {
-    _Base::__put(_impl);
     _impl.__swap(other._impl);
     return *this;
   }
+  this->clear();
   if (_AllocatorTraits::propagate_on_container_move_assignment::value) {
     _Base::__put(_impl);
     _impl.__swap(other._impl);
-    _impl = std::move(static_cast<allocator_type>(other._impl));
+    static_cast<allocator_type&>(_impl) = std::move(
+          static_cast<typename decltype(other)::allocator_type&>(other._impl));
   } else {
-    _impl._end = _impl._begin;
     vector::__insert_range(_impl, const_iterator(_impl._begin), other.begin(),
                            other.end(), other.size(), std::false_type());
   }

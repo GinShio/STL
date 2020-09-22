@@ -24,7 +24,6 @@
  * purpose.  It is provided "as is" without express or implied warranty.
  */
 
-
 #ifndef GINSHIO_STL__VECTOR_HPP_
 #define GINSHIO_STL__VECTOR_HPP_ 1
 
@@ -32,6 +31,7 @@
 #include "base/stl_init.hh"
 
 #include <algorithm>
+#include <cstddef>
 #include <initializer_list>
 #include <iterator>
 #include <limits>
@@ -39,9 +39,7 @@
 #include <type_traits>
 #include <utility>
 
-#include <cstddef>
-
 #include "container/stl_vector.hh"
 #include "container/stl_vector.tcc"
 
-#endif // GINSHIO_STL__VECTOR_HPP_
+#endif  // GINSHIO_STL__VECTOR_HPP_

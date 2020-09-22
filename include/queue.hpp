@@ -24,7 +24,6 @@
  * purpose.  It is provided "as is" without express or implied warranty.
  */
 
-
 #ifndef GINSHIO_STL__QUEUE_HPP_
 #define GINSHIO_STL__QUEUE_HPP_ 1
 
@@ -36,4 +35,4 @@
 
 #include "container/queue.hh"
 
-#endif // GINSHIO_STL__QUEUE_HPP_
+#endif  // GINSHIO_STL__QUEUE_HPP_

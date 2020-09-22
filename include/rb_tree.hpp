@@ -24,21 +24,20 @@
  * purpose.  It is provided "as is" without express or implied warranty.
  */
 
-#ifndef GINSHIO_STL__DEQUE_HPP_
-#define GINSHIO_STL__DEQUE_HPP_ 1
+#ifndef GINSHIO_STL__RB_TREE_HPP_
+#define GINSHIO_STL__RB_TREE_HPP_ 1
 
-#include "base/stl_check.hh"
 #include "base/stl_init.hh"
+#include "base/stl_tree_algo.hh"
 
-#include <algorithm>
 #include <cstddef>
+#include <cstdlib>
 #include <initializer_list>
-#include <iterator>
 #include <limits>
 #include <memory>
-#include <type_traits>
+#include <utility>
 
-#include "container/stl_deque.hh"
-#include "container/stl_deque.tcc"
+#include "container/stl_rb_tree.hh"
+#include "container/stl_rb_tree.tcc"
 
-#endif  // GINSHIO_STL__DEQUE_HPP_
+#endif  // GINSHIO_STL__RB_TREE_HPP_

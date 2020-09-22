@@ -1,5 +1,5 @@
-#ifndef GINSHIO_STL__STL_FORWARD_LIST_HH_
-#define GINSHIO_STL__STL_FORWARD_LIST_HH_ 1
+#ifndef GINSHIO_STL__CONTAINER_STL_FORWARD_LIST_HH_
+#define GINSHIO_STL__CONTAINER_STL_FORWARD_LIST_HH_ 1
 
 namespace ginshio {
 namespace stl {
@@ -50,7 +50,6 @@ struct _FwdListNodeHeader : public _FwdListNodeBase {
     this->_size = _other._size;
   }
 };
-
 
 template <typename _T>
 struct _FwdListNode : public _FwdListNodeBase {
@@ -147,25 +146,29 @@ struct _FwdListIterator {
 };
 ///////////////////////// iterator comparison operator /////////////////////////
 template <typename _T, typename _Ptr, typename _Ref>
-constexpr bool operator==(const _FwdListIterator<_T, _Ptr, _Ref>& _lit,
-                          const _FwdListIterator<_T, _Ptr, _Ref>& _rit) {
+constexpr bool operator==(
+    const _FwdListIterator<_T, _Ptr, _Ref>& _lit,
+    const _FwdListIterator<_T, _Ptr, _Ref>& _rit) noexcept {
   return _lit._node == _rit._node;
 }
 template <typename _T, typename _PtrL, typename _RefL,
           typename _PtrR, typename _RefR>
-constexpr bool operator==(const _FwdListIterator<_T, _PtrL, _RefL>& _lit,
-                          const _FwdListIterator<_T, _PtrR, _RefR>& _rit) {
+constexpr bool operator==(
+    const _FwdListIterator<_T, _PtrL, _RefL>& _lit,
+    const _FwdListIterator<_T, _PtrR, _RefR>& _rit) noexcept {
   return _lit._node == _rit._node;
 }
 template <typename _T, typename _Ptr, typename _Ref>
-constexpr bool operator!=(const _FwdListIterator<_T, _Ptr, _Ref>& _lit,
-                          const _FwdListIterator<_T, _Ptr, _Ref>& _rit) {
+constexpr bool operator!=(
+    const _FwdListIterator<_T, _Ptr, _Ref>& _lit,
+    const _FwdListIterator<_T, _Ptr, _Ref>& _rit) noexcept {
   return _lit._node != _rit._node;
 }
 template <typename _T, typename _PtrL, typename _RefL,
           typename _PtrR, typename _RefR>
-constexpr bool operator!=(const _FwdListIterator<_T, _PtrL, _RefL>& _lit,
-                          const _FwdListIterator<_T, _PtrR, _RefR>& _rit) {
+constexpr bool operator!=(
+    const _FwdListIterator<_T, _PtrL, _RefL>& _lit,
+    const _FwdListIterator<_T, _PtrR, _RefR>& _rit) noexcept {
   return _lit._node != _rit._node;
 }
 
@@ -218,14 +221,14 @@ struct _FwdListBase {
  public:
   _FwdListBase() = default;
   _FwdListBase(const _NodeAllocType& _alloc) : _impl(_alloc) {}
-  _FwdListBase(_FwdListBase&& _other) noexcept :
-      _impl(std::move(_other._impl)) {}
+  _FwdListBase(_FwdListBase&& _other) noexcept
+      : _impl(std::move(_other._impl)) {}
   ~_FwdListBase() noexcept { _FwdListBase::__clear(_impl); }
 
   /////////////// utils function ///////////////
  protected:
-  static void __clear_aux(_FwdListImpl& _impl,
-                          _NodeBase* _start_before, const std::size_t& _count);
+  static void __clear_aux(_FwdListImpl& _impl, _NodeBase* _start_before,
+                          const std::size_t& _count);
   static void __clear(_FwdListImpl& _impl) {
     if (_impl._header._size == 0) {
       return;
@@ -237,7 +240,7 @@ struct _FwdListBase {
   static void __swap_allocator(_NodeAllocType& _a, _NodeAllocType& _b) {
     std::swap(_a, _b);
   }
-  static constexpr std::size_t __max_size() const noexcept {
+  static constexpr std::size_t __max_size() noexcept {
     return std::numeric_limits<std::ptrdiff_t>::max() / sizeof(_NodeType);
   }
   static _NodeBase* __get_before_node(_FwdListImpl& _impl, _NodeBase* _node) {
@@ -270,7 +273,7 @@ struct _FwdListBase {
     _NodeAllocTraits::deallocate(_impl, _node, 1);
   }
 };
-} // namespace __container_base
+}  // namespace __container_base
 
 
 
@@ -307,61 +310,62 @@ class forward_list : protected __container_base::_FwdListBase<T, Allocator> {
   /////////////// constructor ///////////////
  public:
   forward_list() = default;
-  explicit forward_list(const allocator_type& alloc) :
-      _Base(_NodeAllocType(alloc)) {}
+  explicit forward_list(const allocator_type& alloc)
+      : _Base(_NodeAllocType(alloc)) {}
   explicit forward_list(size_type count, const value_type& value,
-                        const allocator_type& alloc = allocator_type()) :
-      _Base(_NodeAllocType(alloc)) {
-    ginshio::stl::
-        __check_length_error("forward_list", count, _Base::__max_size());
-    _impl._finish = forward_list::
-        __fill_n(_impl, this->cbefore_begin(), count, value);
+                        const allocator_type& alloc = allocator_type())
+      : _Base(_NodeAllocType(alloc)) {
+    ginshio::stl::__check_length_error("forward_list", count,
+                                       _Base::__max_size());
+    _impl._finish =
+        forward_list::__fill_n(_impl, this->cbefore_begin(), count, value);
   }
   explicit forward_list(size_type count,
-                        const allocator_type& alloc = allocator_type()) :
-      _Base(_NodeAllocType(alloc)) {
-    ginshio::stl::
-        __check_length_error("forward_list", count, _Base::__max_size());
+                        const allocator_type& alloc = allocator_type())
+      : _Base(_NodeAllocType(alloc)) {
+    ginshio::stl::__check_length_error("forward_list", count,
+                                       _Base::__max_size());
     _impl._finish = forward_list::__fill_n(_impl, this->cbefore_begin(), count);
   }
-  template <typename InputIt, typename = typename
-            std::enable_if<std::is_base_of<
-                             std::input_iterator_tag, typename
-                             std::iterator_traits<InputIt>::iterator_category>::
-                           value>::type*>
+  template <typename InputIt,
+            typename = typename std::enable_if<
+                std::is_base_of<std::input_iterator_tag,
+                                typename std::iterator_traits<
+                                    InputIt>::iterator_category>::value>::type*>
   forward_list(InputIt first, InputIt last,
-               const allocator_type& alloc = allocator_type()) :
-      _Base(_NodeAllocType(alloc)) {
+               const allocator_type& alloc = allocator_type())
+      : _Base(_NodeAllocType(alloc)) {
     using _Category = typename std::iterator_traits<InputIt>::iterator_category;
-    _impl._finish = forward_list::
-        __copy(_impl, this->cbefore_begin(), first, last, _Category());
+    _impl._finish = forward_list::__copy(_impl, this->cbefore_begin(), first,
+                                         last, _Category());
   }
-  forward_list(const forward_list& other) : _Base(_NodeAllocType(
-      _DataAllocTraits::
-      select_on_container_copy_construction(other.get_allocator()))) {
-    _impl._finish = forward_list::
-        __copy_n(_impl, this->cbefore_begin(), other.begin(), other.size());
+  forward_list(const forward_list& other)
+    : _Base(_NodeAllocType(
+                _DataAllocTraits::select_on_container_copy_construction(
+                    other.get_allocator()))) {
+    _impl._finish = forward_list::__copy_n(_impl, this->cbefore_begin(),
+                                           other.begin(), other.size());
   }
-  forward_list(const forward_list& other, const allocator_type& alloc) :
-      _Base(_NodeAllocType(alloc)) {
-    _impl._finish = forward_list::
-        __copy_n(_impl, this->cbefore_begin(), other.begin(), other.size());
+  forward_list(const forward_list& other, const allocator_type& alloc)
+      : _Base(_NodeAllocType(alloc)) {
+    _impl._finish = forward_list::__copy_n(_impl, this->cbefore_begin(),
+                                           other.begin(), other.size());
   }
   forward_list(forward_list&& other) noexcept = default;
-  forward_list(forward_list&& other, const allocator_type& alloc) :
-      _Base(_NodeAllocType(alloc)) {
+  forward_list(forward_list&& other, const allocator_type& alloc)
+      : _Base(_NodeAllocType(alloc)) {
     if (alloc == other.get_allocator()) {
       _impl.__swap(other._impl);
       return;
     }
-    _impl._finish = forward_list::
-        __copy_n(_impl, this->cbefore_begin(), other.begin(), other.size());
+    _impl._finish = forward_list::__copy_n(_impl, this->cbefore_begin(),
+                                           other.begin(), other.size());
   }
   forward_list(std::initializer_list<value_type> ilist,
-               const allocator_type& alloc = allocator_type()) :
-      _Base(_NodeAllocType(alloc)) {
-    _impl._finish = forward_list::
-        __copy_n(_impl, this->cbefore_begin(), ilist.begin(), ilist.size());
+               const allocator_type& alloc = allocator_type())
+      : _Base(_NodeAllocType(alloc)) {
+    _impl._finish = forward_list::__copy_n(_impl, this->cbefore_begin(),
+                                           ilist.begin(), ilist.size());
   }
 
   /////////////// destructor ///////////////
@@ -371,11 +375,11 @@ class forward_list : protected __container_base::_FwdListBase<T, Allocator> {
   /////////////// member function ///////////////
  public:
   void assign(size_type count, const value_type& value);
-  template <typename InputIt, typename = typename
-            std::enable_if<std::is_base_of<
-                             std::input_iterator_tag, typename
-                             std::iterator_traits<InputIt>::iterator_category>::
-                           value>::type*>
+  template <typename InputIt,
+            typename = typename std::enable_if<
+                std::is_base_of<std::input_iterator_tag,
+                                typename std::iterator_traits<
+                                    InputIt>::iterator_category>::value>::type*>
   void assign(InputIt first, InputIt last) {
     using _Category = typename std::iterator_traits<InputIt>::iterator_category;
     this->__assign_aux(first, last, _Category());
@@ -388,25 +392,25 @@ class forward_list : protected __container_base::_FwdListBase<T, Allocator> {
     if (this == &other) {
       return *this;
     }
-    if (_DataAllocTraits::propagate_on_container_copy_assignment::value) {
-      if (other.get_allocator() != this->get_allocator()) {
-        _Base::__clear(_impl);
-      }
-      _impl = static_cast<_NodeAllocType>(other._impl);
+    if (_DataAllocTraits::propagate_on_container_copy_assignment::value &&
+        other.get_allocator() != this->get_allocator()) {
+      _Base::__clear(_impl);
+      static_cast<allocator_type&>(_impl) =
+          static_cast<allocator_type&>(other._impl);
     }
     this->__assign_aux(other.begin(), other.end(), std::forward_iterator_tag());
     return *this;
   }
   forward_list& operator=(forward_list&& other) {
     if (this->get_allocator() == other.get_allocator()) {
-      _Base::__clear(_impl);
       _impl.__swap(other._impl);
       return *this;
     }
+    _Base::__clear(_impl);
     if (_DataAllocTraits::propagate_on_container_move_assignment::value) {
-      _Base::__clear(_impl);
       _impl.__swap(other._impl);
-      _impl = std::move(static_cast<allocator_type>(other._impl));
+      static_cast<allocator_type&>(_impl) = std::move(
+          static_cast<typename decltype(other)::allocator_type&>(other._impl));
     } else {
       this->__assign_aux(std::move_iterator<iterator>(other.begin()),
                          std::move_iterator<iterator>(other.end()),
@@ -480,8 +484,8 @@ class forward_list : protected __container_base::_FwdListBase<T, Allocator> {
   iterator insert_after(const_iterator pos, value_type&& value) {
     return this->emplace_after(pos, std::forward<value_type>(value));
   }
-  iterator insert_after(const_iterator pos,
-                        size_type count, const value_type& value) {
+  iterator insert_after(const_iterator pos, size_type count,
+                        const value_type& value) {
     if (count != 0) {
       forward_list _tmp{count, value, this->get_allocator()};
       iterator _it = _tmp.begin();
@@ -490,11 +494,11 @@ class forward_list : protected __container_base::_FwdListBase<T, Allocator> {
     }
     return iterator(pos._node);
   }
-  template <typename InputIt, typename = typename
-            std::enable_if<std::is_base_of<
-                             std::input_iterator_tag, typename
-                             std::iterator_traits<InputIt>::iterator_category>::
-                           value>::type*>
+  template <typename InputIt,
+            typename = typename std::enable_if<
+                std::is_base_of<std::input_iterator_tag,
+                                typename std::iterator_traits<
+                                    InputIt>::iterator_category>::value>::type*>
   iterator insert_after(const_iterator pos, InputIt first, InputIt last) {
     forward_list _tmp{first, last, this->get_allocator()};
     if (!_tmp.empty()) {
@@ -513,7 +517,6 @@ class forward_list : protected __container_base::_FwdListBase<T, Allocator> {
       return _it;
     }
     return iterator(pos._node);
-
   }
   template <typename... Args>
   iterator emplace_after(const_iterator pos, Args&&... args) {
@@ -572,8 +575,8 @@ class forward_list : protected __container_base::_FwdListBase<T, Allocator> {
   }
   template <typename... Args>
   reference emplace_front(Args&&... args) {
-    _NodeBase* _node = _Base::__get(_impl, std::forward<Args>(args)...)->
-        __hook(static_cast<_NodeBase*>(&_impl._header));
+    _NodeBase* _node = _Base::__get(_impl, std::forward<Args>(args)...)
+                           ->__hook(static_cast<_NodeBase*>(&_impl._header));
     if (_impl._header._size == 0) {
       _impl._finish = _node;
     }
@@ -581,8 +584,8 @@ class forward_list : protected __container_base::_FwdListBase<T, Allocator> {
     return *iterator(_impl._header._next);
   }
   void pop_front() {
-    _Base::__put(_impl, _impl._header._next->
-                 __unhook(static_cast<_NodeBase*>(&_impl._header)));
+    _Base::__put(_impl, _impl._header._next->__unhook(
+                            static_cast<_NodeBase*>(&_impl._header)));
     if (_impl._header._size == 1) {
       _impl._finish = static_cast<_NodeBase*>(&_impl._header);
     }
@@ -590,11 +593,10 @@ class forward_list : protected __container_base::_FwdListBase<T, Allocator> {
   }
   void resize(size_type count) {
     if (_impl._header._size < count) {
-      ginshio::stl::__check_length_error("forward_list::resize",
-                                         count, _Base::__max_size());
-      _impl._finish = forward_list::
-          __fill_n(_impl, const_iterator(_impl._finish),
-                   count - _impl._header._size);
+      ginshio::stl::__check_length_error("forward_list::resize", count,
+                                         _Base::__max_size());
+      _impl._finish = forward_list::__fill_n(
+          _impl, const_iterator(_impl._finish), count - _impl._header._size);
     } else if (count < _impl._header._size) {
       iterator _start_before = this->before_begin();
       std::advance(_start_before, count);
@@ -604,11 +606,11 @@ class forward_list : protected __container_base::_FwdListBase<T, Allocator> {
   }
   void resize(size_type count, const value_type& value) {
     if (_impl._header._size < count) {
-      ginshio::stl::__check_length_error("forward_list::resize",
-                                         count, _Base::__max_size());
-      _impl._finish = forward_list::
-          __fill_n(_impl, const_iterator(_impl._finish),
-                   count - _impl._header._size, value);
+      ginshio::stl::__check_length_error("forward_list::resize", count,
+                                         _Base::__max_size());
+      _impl._finish =
+          forward_list::__fill_n(_impl, const_iterator(_impl._finish),
+                                 count - _impl._header._size, value);
     } else if (count < _impl._header._size) {
       iterator _start_before = this->before_begin();
       std::advance(_start_before, count);
@@ -616,8 +618,8 @@ class forward_list : protected __container_base::_FwdListBase<T, Allocator> {
       _impl._finish = _start_before._node;
     }
   }
-  void swap(forward_list& other)
-      noexcept(_NodeAllocTraits::is_always_equal::value) {
+  void swap(forward_list& other) noexcept(
+      _NodeAllocTraits::is_always_equal::value) {
     if (this == &other) {
       return;
     }
@@ -633,7 +635,8 @@ class forward_list : protected __container_base::_FwdListBase<T, Allocator> {
   void merge(forward_list& other, Compare comp) {
     this->merge(std::move(other), comp);
   }
-  template <typename Compare> void merge(forward_list&& other, Compare comp);
+  template <typename Compare>
+  void merge(forward_list&& other, Compare comp);
   void splice_after(const_iterator pos, forward_list& other) {
     this->splice_after(pos, std::move(other));
   }
@@ -651,16 +654,15 @@ class forward_list : protected __container_base::_FwdListBase<T, Allocator> {
     other._impl._header._size = 0;
     other._impl._finish = static_cast<_NodeBase*>(&other._impl._header);
   }
-  void splice_after(const_iterator pos,
-                    forward_list& other, const_iterator it) {
+  void splice_after(const_iterator pos, forward_list& other,
+                    const_iterator it) {
     this->splice_after(pos, std::move(other), it);
   }
-  void splice_after(const_iterator pos,
-                    forward_list&& other, const_iterator it) {
+  void splice_after(const_iterator pos, forward_list&& other,
+                    const_iterator it) {
     if (this->get_allocator() != other.get_allocator() ||
-        other._impl._header._size == 0 ||
-        it._node == pos._node || it._node == pos._node->_next ||
-        it._node == other._impl._finish) {
+        other._impl._header._size == 0 || it._node == pos._node ||
+        it._node == pos._node->_next || it._node == other._impl._finish) {
       return;
     }
     if (it._node->_next == other._impl._finish) {
@@ -680,12 +682,15 @@ class forward_list : protected __container_base::_FwdListBase<T, Allocator> {
   void splice_after(const_iterator pos, forward_list&& other,
                     const_iterator first, const_iterator last);
   size_type remove(const value_type& value);
-  template <typename UnaryPredicate> size_type remove_if(UnaryPredicate p);
+  template <typename UnaryPredicate>
+  size_type remove_if(UnaryPredicate p);
   void reverse() noexcept;
   size_type unique();
-  template <typename BinaryPredicate> size_type unique(BinaryPredicate p);
+  template <typename BinaryPredicate>
+  size_type unique(BinaryPredicate p);
   void sort();
-  template <typename Compare> void sort(Compare comp);
+  template <typename Compare>
+  void sort(Compare comp);
 
   /////////////// assign ///////////////
  private:
@@ -737,7 +742,7 @@ template <typename T, typename Allocator>
 constexpr bool operator!=(const forward_list<T, Allocator>& lhs,
                           const forward_list<T, Allocator>& rhs) {
   return &lhs != &rhs && (lhs.size() != rhs.size() ||
-                          std::equal(lhs.begin(), lhs.end(), rhs.begin()));
+                          !std::equal(lhs.begin(), lhs.end(), rhs.begin()));
 }
 template <typename T, typename Allocator>
 constexpr bool operator<(const forward_list<T, Allocator>& lhs,
@@ -772,18 +777,20 @@ inline void swap(forward_list<T, Allocator>& lhs,
 }
 
 template <typename T, typename Allocator, typename U>
-inline auto erase(forward_list<T, Allocator>& l, const U& value)
-    -> typename forward_list<T, Allocator>::size_type {
+inline auto erase(forward_list<T, Allocator>& l, const U& value) ->
+    typename forward_list<T, Allocator>::size_type {
   return l.remove(value);
 }
 template <typename T, typename Allocator, typename Pred>
-inline auto erase_if(forward_list<T, Allocator>& l, Pred pred)
-    -> typename forward_list<T, Allocator>::size_type {
+inline auto erase_if(forward_list<T, Allocator>& l, Pred pred) ->
+    typename forward_list<T, Allocator>::size_type {
   return l.remove_if(pred);
 }
 
-} // namespace stl
-} // namespace ginshio
+}  // namespace stl
+}  // namespace ginshio
+
+
 
 
 
@@ -801,10 +808,10 @@ inline auto erase(ginshio::stl::forward_list<T, Allocator>& l, const U& value)
   return l.remove(value);
 }
 template <typename T, typename Allocator, typename Pred>
-inline auto erase_if(ginshio::stl::forward_list<T, Allocator>& l, Pred pred)
-    -> typename ginshio::stl::forward_list<T, Allocator>::size_type {
+inline auto erase_if(ginshio::stl::forward_list<T, Allocator>& l, Pred pred) ->
+    typename ginshio::stl::forward_list<T, Allocator>::size_type {
   return l.remove_if(pred);
 }
-} // namespace std
+}  // namespace std
 
-#endif // GINSHIO_STL__STL_FORWARD_LIST_HH_
+#endif  // GINSHIO_STL__CONTAINER_STL_FORWARD_LIST_HH_

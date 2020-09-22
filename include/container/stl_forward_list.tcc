@@ -1,14 +1,14 @@
-#ifndef GINSHIO_STL__STL_FORWARD_LIST_TCC_
-#define GINSHIO_STL__STL_FORWARD_LIST_TCC_ 1
+#ifndef GINSHIO_STL__CONTAINER_STL_FORWARD_LIST_TCC_
+#define GINSHIO_STL__CONTAINER_STL_FORWARD_LIST_TCC_ 1
 
 namespace ginshio {
 namespace stl {
 
 namespace __container_base {
 template <typename _T, typename _Alloc>
-void _FwdListBase<_T, _Alloc>::
-__clear_aux(_FwdListImpl& _impl,
-            _NodeBase* _start_before, const std::size_t& _count) {
+void _FwdListBase<_T, _Alloc>::__clear_aux(_FwdListImpl& _impl,
+                                           _NodeBase* _start_before,
+                                           const std::size_t& _count) {
   _NodeBase* _cur = _start_before->_next;
   for (std::size_t _n = _count; _n < _impl._header._size; ++_n) {
     _NodeBase* _next = _cur->_next;
@@ -18,7 +18,7 @@ __clear_aux(_FwdListImpl& _impl,
   _start_before->_next = _cur;
   _impl._header._size = _count;
 }
-} // namespace __container_base
+}  // namespace __container_base
 
 template <typename T, typename Allocator>
 void forward_list<T, Allocator>::assign(size_type count,
@@ -31,8 +31,8 @@ void forward_list<T, Allocator>::assign(size_type count,
     _prev = _it._node;
     _it._node = _it._node->_next;
   }
-  _n < count ? this->insert_after(_prev, count - _n, value) :
-      this->erase_after(_prev, const_iterator(nullptr));
+  _n < count ? this->insert_after(_prev, count - _n, value)
+             : this->erase_after(_prev, const_iterator(nullptr));
 }
 
 template <typename T, typename Allocator>
@@ -74,7 +74,8 @@ void forward_list<T, Allocator>::merge(forward_list<T, Allocator>&& other) {
   other._impl._finish = static_cast<_NodeBase*>(&other._impl._header);
 }
 
-template <typename T, typename Allocator> template <typename Compare>
+template <typename T, typename Allocator>
+template <typename Compare>
 void forward_list<T, Allocator>::merge(forward_list<T, Allocator>&& other,
                                        Compare comp) {
   if (this == &other || this->get_allocator() != other.get_allocator()) {
@@ -115,9 +116,10 @@ void forward_list<T, Allocator>::merge(forward_list<T, Allocator>&& other,
 }
 
 template <typename T, typename Allocator>
-void forward_list<T, Allocator>::
-splice_after(const_iterator pos, forward_list&& other,
-             const_iterator first, const_iterator last) {
+void forward_list<T, Allocator>::splice_after(const_iterator pos,
+                                              forward_list&& other,
+                                              const_iterator first,
+                                              const_iterator last) {
   if (first == last || first._node->_next == last._node ||
       this->get_allocator() != other.get_allocator() ||
       other._impl._header._size == 0) {
@@ -150,8 +152,8 @@ auto forward_list<T, Allocator>::remove(const value_type& value)
     _next._node = _cur._node->_next;
     if (*_cur == value) {
       ++_removed;
-      _Base::__put(
-          _impl, static_cast<_NodeType*>(_cur._node->__unhook(_prev._node)));
+      _Base::__put(_impl,
+                   static_cast<_NodeType*>(_cur._node->__unhook(_prev._node)));
     } else {
       _prev._node = _cur._node;
     }
@@ -162,7 +164,8 @@ auto forward_list<T, Allocator>::remove(const value_type& value)
   return _removed;
 }
 
-template <typename T, typename Allocator> template <typename UnaryPredicate>
+template <typename T, typename Allocator>
+template <typename UnaryPredicate>
 auto forward_list<T, Allocator>::remove_if(UnaryPredicate p)
     -> forward_list<T, Allocator>::size_type {
   size_type _removed = 0;
@@ -172,8 +175,8 @@ auto forward_list<T, Allocator>::remove_if(UnaryPredicate p)
     if (p(*_cur)) {
       ++_removed;
       _next._node = _cur._node->_next;
-      _Base::__put(
-          _impl, static_cast<_NodeType*>(_cur._node->__unhook(_prev._node)));
+      _Base::__put(_impl,
+                   static_cast<_NodeType*>(_cur._node->__unhook(_prev._node)));
       _cur._node = _next._node;
     } else {
       _prev._node = _cur._node;
@@ -192,7 +195,7 @@ void forward_list<T, Allocator>::reverse() noexcept {
   }
   _impl._finish = _impl._header._next;
   _NodeBase* _prev = _impl._header._next;
-  _NodeBase* _cur = _prev->_next,* _next;
+  _NodeBase *_cur = _prev->_next, *_next;
   for (size_type _n = 1; _n < _impl._header._size; ++_n) {
     _next = _cur->_next;
     _cur->_next = _prev;
@@ -213,8 +216,8 @@ auto forward_list<T, Allocator>::unique()
     _next._node = _cur._node->_next;
     if (*_cur == *_next) {
       ++_removed;
-      _Base::__put(
-          _impl, static_cast<_NodeType*>(_cur._node->__unhook(_prev._node)));
+      _Base::__put(_impl,
+                   static_cast<_NodeType*>(_cur._node->__unhook(_prev._node)));
     } else {
       _prev._node = _cur._node;
     }
@@ -226,7 +229,8 @@ auto forward_list<T, Allocator>::unique()
   return _removed;
 }
 
-template <typename T, typename Allocator> template <typename BinaryPredicate>
+template <typename T, typename Allocator>
+template <typename BinaryPredicate>
 auto forward_list<T, Allocator>::unique(BinaryPredicate p)
     -> forward_list<T, Allocator>::size_type {
   size_type _removed = 0;
@@ -236,8 +240,8 @@ auto forward_list<T, Allocator>::unique(BinaryPredicate p)
     _next._node = _cur._node->_next;
     if (p(*_cur, *_next)) {
       ++_removed;
-      _Base::__put(
-          _impl, static_cast<_NodeType*>(_cur._node->__unhook(_prev._node)));
+      _Base::__put(_impl,
+                   static_cast<_NodeType*>(_cur._node->__unhook(_prev._node)));
     } else {
       _prev._node = _cur._node;
     }
@@ -283,7 +287,8 @@ void forward_list<T, Allocator>::sort() {
   }
 }
 
-template <typename T, typename Allocator> template <typename Compare>
+template <typename T, typename Allocator>
+template <typename Compare>
 void forward_list<T, Allocator>::sort(Compare comp) {
   if (_impl._header._size < 2) {
     return;
@@ -317,21 +322,23 @@ void forward_list<T, Allocator>::sort(Compare comp) {
   }
 }
 
-template <typename T, typename Allocator> template <typename _InputIt>
+template <typename T, typename Allocator>
+template <typename _InputIt>
 void forward_list<T, Allocator>::__assign_aux(_InputIt _first, _InputIt _last,
                                               std::input_iterator_tag) {
   auto _prev = const_iterator(static_cast<_NodeBase*>(&_impl._header));
   auto _end = const_iterator(nullptr);
-  for (auto _it = iterator(_impl._header._next);
-       _first != _last && _it != _end; ++_first, ++_it) {
+  for (auto _it = iterator(_impl._header._next); _first != _last && _it != _end;
+       ++_first, ++_it) {
     *_it = *_first;
     _prev._node = _it._node;
   }
-  _first == _last ? this->erase_after(_prev, _end) :
-      this->insert_after(_prev, _first, _last);
+  _first == _last ? this->erase_after(_prev, _end)
+                  : this->insert_after(_prev, _first, _last);
 }
 
-template <typename T, typename Allocator> template <typename _RandomIt>
+template <typename T, typename Allocator>
+template <typename _RandomIt>
 void forward_list<T, Allocator>::__assign_aux(_RandomIt _first, _RandomIt _last,
                                               std::random_access_iterator_tag) {
   auto _prev = const_iterator(static_cast<_NodeBase*>(&_impl._header));
@@ -342,14 +349,16 @@ void forward_list<T, Allocator>::__assign_aux(_RandomIt _first, _RandomIt _last,
     _prev._node = _it._node;
     ++_first, ++_it;
   }
-  _n < _size ? this->insert_after(_prev, _first, _last) :
-      this->erase_after(_prev, const_iterator(nullptr));
+  _n < _size ? this->insert_after(_prev, _first, _last)
+             : this->erase_after(_prev, const_iterator(nullptr));
 }
 
-template <typename T, typename Allocator> template <typename... Args>
-auto forward_list<T, Allocator>::
-__fill_n(_BaseImpl& _impl, const_iterator _prev,
-         const size_type& _count, Args&&... args)
+template <typename T, typename Allocator>
+template <typename... Args>
+auto forward_list<T, Allocator>::__fill_n(_BaseImpl& _impl,
+                                          const_iterator _prev,
+                                          const size_type& _count,
+                                          Args&&... args)
     -> forward_list<T, Allocator>::_NodeBase* {
   for (size_type _n = 0; _n < _count; ++_n) {
     _Base::__get(_impl, std::forward<Args>(args)...)->__hook(_prev._node);
@@ -359,7 +368,8 @@ __fill_n(_BaseImpl& _impl, const_iterator _prev,
   return _prev._node;
 }
 
-template <typename T, typename Allocator> template <typename _InputIt>
+template <typename T, typename Allocator>
+template <typename _InputIt>
 auto forward_list<T, Allocator>::__copy(_BaseImpl& _impl, const_iterator _prev,
                                         _InputIt _first, _InputIt _last,
                                         std::input_iterator_tag)
@@ -372,10 +382,11 @@ auto forward_list<T, Allocator>::__copy(_BaseImpl& _impl, const_iterator _prev,
   return _prev._node;
 }
 
-template <typename T, typename Allocator> template <typename _InputIt>
-auto forward_list<T, Allocator>::
-__copy_n(_BaseImpl& _impl, const_iterator _prev,
-         _InputIt _first, const size_type& _cnt)
+template <typename T, typename Allocator>
+template <typename _InputIt>
+auto forward_list<T, Allocator>::__copy_n(_BaseImpl& _impl,
+                                          const_iterator _prev, _InputIt _first,
+                                          const size_type& _cnt)
     -> forward_list<T, Allocator>::_NodeBase* {
   for (size_type _n = 0; _n < _cnt; ++_n) {
     _Base::__get(_impl, *_first)->__hook(_prev._node);
@@ -385,7 +396,7 @@ __copy_n(_BaseImpl& _impl, const_iterator _prev,
   return _prev._node;
 }
 
-} // namespace stl
-} // namespace ginshio
+}  // namespace stl
+}  // namespace ginshio
 
-#endif // GINSHIO_STL__STL_FORWARD_LIST_TCC_
+#endif  // GINSHIO_STL__CONTAINER_STL_FORWARD_LIST_TCC_

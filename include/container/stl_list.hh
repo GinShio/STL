@@ -24,9 +24,8 @@
  * purpose.  It is provided "as is" without express or implied warranty.
  */
 
-
-#ifndef GINSHIO_STL__STL_LIST_HH_
-#define GINSHIO_STL__STL_LIST_HH_ 1
+#ifndef GINSHIO_STL__CONTAINER_STL_LIST_HH_
+#define GINSHIO_STL__CONTAINER_STL_LIST_HH_ 1
 
 namespace ginshio {
 namespace stl {
@@ -195,24 +194,26 @@ struct _ListIterator {
 ///////////////////////// iterator comparison operator /////////////////////////
 template <typename _T, typename _Ptr, typename _Ref>
 constexpr bool operator==(const _ListIterator<_T, _Ptr, _Ref>& _lit,
-                          const _ListIterator<_T, _Ptr, _Ref>& _rit) {
+                          const _ListIterator<_T, _Ptr, _Ref>& _rit) noexcept {
   return _lit._node == _rit._node;
 }
 template <typename _T, typename _PtrL, typename _RefL,
           typename _PtrR, typename _RefR>
-constexpr bool operator==(const _ListIterator<_T, _PtrL, _RefL>& _lit,
-                          const _ListIterator<_T, _PtrR, _RefR>& _rit) {
+constexpr bool operator==(
+    const _ListIterator<_T, _PtrL, _RefL>& _lit,
+    const _ListIterator<_T, _PtrR, _RefR>& _rit) noexcept {
   return _lit._node == _rit._node;
 }
 template <typename _T, typename _Ptr, typename _Ref>
 constexpr bool operator!=(const _ListIterator<_T, _Ptr, _Ref>& _lit,
-                          const _ListIterator<_T, _Ptr, _Ref>& _rit) {
+                          const _ListIterator<_T, _Ptr, _Ref>& _rit) noexcept {
   return _lit._node != _rit._node;
 }
 template <typename _T, typename _PtrL, typename _RefL,
           typename _PtrR, typename _RefR>
-constexpr bool operator!=(const _ListIterator<_T, _PtrL, _RefL>& _lit,
-                          const _ListIterator<_T, _PtrR, _RefR>& _rit) {
+constexpr bool operator!=(
+    const _ListIterator<_T, _PtrL, _RefL>& _lit,
+    const _ListIterator<_T, _PtrR, _RefR>& _rit) noexcept {
   return _lit._node != _rit._node;
 }
 
@@ -241,9 +242,7 @@ struct _ListBase {
     _ListNodeHeader _header;
     _ListImpl() = default;
     _ListImpl(const _NodeAllocType& _alloc) : _NodeAllocType(_alloc) {}
-    void __swap(_ListImpl& _impl) {
-      std::swap(_impl._header, _header);
-    }
+    void __swap(_ListImpl& _impl) { std::swap(_impl._header, _header); }
   };
 
   /////////////// data member ///////////////
@@ -279,7 +278,7 @@ struct _ListBase {
   static void __swap_allocator(_NodeAllocType& _a, _NodeAllocType& _b) {
     std::swap(_a, _b);
   }
-  static constexpr std::size_t __max_size() const noexcept {
+  static constexpr std::size_t __max_size() noexcept {
     return std::numeric_limits<std::ptrdiff_t>::max() / sizeof(_NodeType);
   }
 
@@ -301,9 +300,7 @@ struct _ListBase {
     _NodeAllocTraits::deallocate(_impl, _node, 1);
   }
 };
-} // namespace __container_base
-
-
+}  // namespace __container_base
 
 ///////////////////////// list /////////////////////////
 template <typename T, typename Allocator = std::allocator<T>>
@@ -342,8 +339,8 @@ class list : protected __container_base::_ListBase<T, Allocator> {
   list() = default;
   explicit list(const allocator_type& alloc) : _Base(_NodeAllocType(alloc)) {}
   explicit list(size_type count, const value_type& value,
-                const allocator_type& alloc = allocator_type()) :
-      _Base(_NodeAllocType(alloc)) {
+                const allocator_type& alloc = allocator_type())
+      : _Base(_NodeAllocType(alloc)) {
     ginshio::stl::__check_length_error("list", count, _Base::__max_size());
     list::__fill_n(_impl, this->cbegin(), count, value);
   }
@@ -358,23 +355,24 @@ class list : protected __container_base::_ListBase<T, Allocator> {
                              std::iterator_traits<InputIt>::iterator_category>::
                            value>::type*>
   list(InputIt first, InputIt last,
-       const allocator_type& alloc = allocator_type()) :
-      _Base(_NodeAllocType(alloc)) {
+       const allocator_type& alloc = allocator_type())
+      : _Base(_NodeAllocType(alloc)) {
     using _Category = typename std::iterator_traits<InputIt>::iterator_category;
     list::__copy(_impl, this->begin(), first, last, _Category());
   }
-  list(const list& other) : _Base(_NodeAllocType(
-      _DataAllocTraits::
-      select_on_container_copy_construction(other.get_allocator()))) {
+  list(const list& other)
+      : _Base(_NodeAllocType(
+            _DataAllocTraits::select_on_container_copy_construction(
+                other.get_allocator()))) {
     list::__copy_n(_impl, this->begin(), other.begin(), other.size());
   }
-  list(const list& other, const allocator_type& alloc) :
-      _Base(_NodeAllocType(alloc)) {
+  list(const list& other, const allocator_type& alloc)
+      : _Base(_NodeAllocType(alloc)) {
     list::__copy_n(_impl, this->begin(), other.begin(), other.size());
   }
   list(list&& other) noexcept = default;
-  list(list&& other, const allocator_type& alloc) :
-      _Base(_NodeAllocType(alloc)) {
+  list(list&& other, const allocator_type& alloc)
+      : _Base(_NodeAllocType(alloc)) {
     if (alloc == other.get_allocator()) {
       _impl.__swap(other._impl);
       return;
@@ -382,8 +380,8 @@ class list : protected __container_base::_ListBase<T, Allocator> {
     list::__copy_n(_impl, this->begin(), other.begin(), other.size());
   }
   list(std::initializer_list<value_type> ilist,
-       const allocator_type& alloc = allocator_type()) :
-      _Base(_NodeAllocType(alloc)) {
+       const allocator_type& alloc = allocator_type())
+      : _Base(_NodeAllocType(alloc)) {
     list::__copy_n(_impl, this->begin(), ilist.begin(), ilist.size());
   }
 
@@ -423,11 +421,11 @@ class list : protected __container_base::_ListBase<T, Allocator> {
     if (this == &other) {
       return *this;
     }
-    if (_DataAllocTraits::propagate_on_container_copy_assignment::value) {
-      if (other.get_allocator() != this->get_allocator()) {
-        _Base::__clear_aux(_impl, 0);
-      }
-      _impl = static_cast<_NodeAllocType>(other._impl);
+    if (_DataAllocTraits::propagate_on_container_copy_assignment::value &&
+        other.get_allocator() != this->get_allocator()) {
+      _Base::__clear_aux(_impl, 0);
+      static_cast<allocator_type&>(_impl) =
+          static_cast<allocator_type&>(other._impl);
     }
     this->__assign_range_dispatch(other.begin(), other.end(),
                                   std::bidirectional_iterator_tag());
@@ -435,14 +433,14 @@ class list : protected __container_base::_ListBase<T, Allocator> {
   }
   list& operator=(list&& other) {
     if (this->get_allocator() == other.get_allocator()) {
-      _Base::__clear_aux(_impl, 0);
       _impl.__swap(other._impl);
       return *this;
     }
+    _Base::__clear_aux(_impl, 0);
     if (_DataAllocTraits::propagate_on_container_move_assignment::value) {
-      _Base::__clear_aux(_impl, 0);
       _impl.__swap(other._impl);
-      _impl = std::move(static_cast<allocator_type>(other._impl));
+      static_cast<allocator_type&>(_impl) = std::move(
+          static_cast<typename decltype(other)::allocator_type&>(other._impl));
     } else {
       this->__assign_range_dispatch(std::move_iterator<iterator>(other.begin()),
                                     std::move_iterator<iterator>(other.end()),
@@ -524,7 +522,8 @@ class list : protected __container_base::_ListBase<T, Allocator> {
   iterator insert(const_iterator pos, value_type&& value) {
     return this->emplace(pos, std::forward<value_type>(value));
   }
-  iterator insert(const_iterator pos, size_type count, const value_type& value) {
+  iterator insert(const_iterator pos, size_type count,
+                  const value_type& value) {
     if (count != 0) {
       list _tmp{count, value, this->get_allocator()};
       iterator _it = _tmp.begin();
@@ -580,8 +579,8 @@ class list : protected __container_base::_ListBase<T, Allocator> {
     return *iterator(_node->__hook(static_cast<_NodeBase*>(&_impl._header)));
   }
   void pop_back() {
-    _Base::
-        __put(_impl, static_cast<_NodeType*>(_impl._header._prev->__unhook()));
+    _Base::__put(_impl,
+                 static_cast<_NodeType*>(_impl._header._prev->__unhook()));
     --_impl._header._size;
   }
   void push_front(const value_type& value) { this->emplace_front(value); }
@@ -595,14 +594,14 @@ class list : protected __container_base::_ListBase<T, Allocator> {
     return *iterator(_node->__hook(_impl._header._next));
   }
   void pop_front() {
-    _Base::
-        __put(_impl, static_cast<_NodeType*>(_impl._header._next->__unhook()));
+    _Base::__put(_impl,
+                 static_cast<_NodeType*>(_impl._header._next->__unhook()));
     --_impl._header._size;
   }
   void resize(size_type count) {
     if (_impl._header._size < count) {
-      ginshio::stl::
-          __check_length_error("list::resize", count, _Base::__max_size());
+      ginshio::stl::__check_length_error("list::resize", count,
+                                         _Base::__max_size());
       return list::__fill_n(_impl, this->cend(), count - _impl._header._size);
     } else if (count < _impl._header._size) {
       _Base::__clear_aux(_impl, count);
@@ -610,8 +609,8 @@ class list : protected __container_base::_ListBase<T, Allocator> {
   }
   void resize(size_type count, const value_type& value) {
     if (_impl._header._size < count) {
-      ginshio::stl::
-          __check_length_error("list::resize", count, _Base::__max_size());
+      ginshio::stl::__check_length_error("list::resize", count,
+                                         _Base::__max_size());
       return list::__fill_n(_impl, this->cend(),
                             count - _impl._header._size, value);
     } else if (count < _impl._header._size) {
@@ -654,8 +653,8 @@ class list : protected __container_base::_ListBase<T, Allocator> {
   }
   void splice(const_iterator pos, list&& other, const_iterator it) {
     if (this->get_allocator() != other.get_allocator() ||
-        other._impl._header._size == 0 ||
-        it._node == pos._node || it._node->_next == pos._node) {
+        other._impl._header._size == 0 || it._node == pos._node ||
+        it._node->_next == pos._node) {
       return;
     }
     pos._node->__transfer(it._node, it._node->_next);
@@ -678,12 +677,15 @@ class list : protected __container_base::_ListBase<T, Allocator> {
     other._impl._header._size -= _len;
   }
   size_type remove(const value_type& value);
-  template <typename UnaryPredicate> size_type remove_if(UnaryPredicate p);
+  template <typename UnaryPredicate>
+  size_type remove_if(UnaryPredicate p);
   void reverse() noexcept;
   size_type unique();
-  template <typename BinaryPredicate> size_type unique(BinaryPredicate p);
+  template <typename BinaryPredicate>
+  size_type unique(BinaryPredicate p);
   void sort();
-  template <typename Compare> void sort(Compare comp);
+  template <typename Compare>
+  void sort(Compare comp);
 
   /////////////// assign ///////////////
  private:
@@ -735,7 +737,7 @@ template <typename T, typename Allocator>
 constexpr bool operator!=(const list<T, Allocator>& lhs,
                           const list<T, Allocator>& rhs) {
   return &lhs != &rhs && (lhs.size() != rhs.size() ||
-                          std::equal(lhs.begin(), lhs.end(), rhs.begin()));
+                          !std::equal(lhs.begin(), lhs.end(), rhs.begin()));
 }
 template <typename T, typename Allocator>
 constexpr bool operator<(const list<T, Allocator>& lhs,
@@ -769,18 +771,20 @@ inline void swap(list<T, Allocator>& lhs, list<T, Allocator>& rhs) {
 }
 
 template <typename T, typename Allocator, typename U>
-inline auto erase(list<T, Allocator>& l, const U& value)
-    -> typename list<T, Allocator>::size_type {
+inline auto erase(list<T, Allocator>& l, const U& value) ->
+    typename list<T, Allocator>::size_type {
   return l.remove(value);
 }
 template <typename T, typename Allocator, typename Pred>
-inline auto erase_if(list<T, Allocator>& l, Pred pred)
-    -> typename list<T, Allocator>::size_type {
+inline auto erase_if(list<T, Allocator>& l, Pred pred) ->
+    typename list<T, Allocator>::size_type {
   return l.remove_if(pred);
 }
 
-} // namespace stl
-} // namespace ginshio
+}  // namespace stl
+}  // namespace ginshio
+
+
 
 
 
@@ -793,15 +797,15 @@ inline void swap(ginshio::stl::list<T, Allocator>& lhs,
 }
 
 template <typename T, typename Allocator, typename U>
-inline auto erase(ginshio::stl::list<T, Allocator>& l, const U& value)
-    -> typename ginshio::stl::list<T, Allocator>::size_type {
+inline auto erase(ginshio::stl::list<T, Allocator>& l, const U& value) ->
+    typename ginshio::stl::list<T, Allocator>::size_type {
   return l.remove(value);
 }
 template <typename T, typename Allocator, typename Pred>
-inline auto erase_if(ginshio::stl::list<T, Allocator>& l, Pred pred)
-    -> typename ginshio::stl::list<T, Allocator>::size_type {
+inline auto erase_if(ginshio::stl::list<T, Allocator>& l, Pred pred) ->
+    typename ginshio::stl::list<T, Allocator>::size_type {
   return l.remove_if(pred);
 }
-} // namespace std
+}  // namespace std
 
-#endif // GINSHIO_STL__STL_LIST_HH_
+#endif  // GINSHIO_STL__CONTAINER_STL_LIST_HH_

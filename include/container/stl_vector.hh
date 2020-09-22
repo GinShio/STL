@@ -24,9 +24,8 @@
  * purpose.  It is provided "as is" without express or implied warranty.
  */
 
-
-#ifndef GINSHIO_STL__STL_VECTOR_HH_
-#define GINSHIO_STL__STL_VECTOR_HH_ 1
+#ifndef GINSHIO_STL__CONTAINER_STL_VECTOR_HH_
+#define GINSHIO_STL__CONTAINER_STL_VECTOR_HH_ 1
 
 namespace ginshio {
 namespace stl {
@@ -61,10 +60,10 @@ struct _VectorBase {
   _VectorBase() { _VectorBase::__get(0, _impl); }
   _VectorBase(const std::size_t& _cap) : _VectorBase(_cap, _AllocatorType()) {}
   _VectorBase(const _AllocatorType& _alloc) : _VectorBase(0, _alloc) {}
-  _VectorBase(const std::size_t& _cap,
-              const _AllocatorType& _alloc) : _impl(_alloc) {
-    ginshio::stl::
-        __check_length_error("vector", _cap, _VectorBase::__max_size());
+  _VectorBase(const std::size_t& _cap, const _AllocatorType& _alloc)
+      : _impl(_alloc) {
+    ginshio::stl::__check_length_error("vector", _cap,
+                                       _VectorBase::__max_size());
     _VectorBase::__get(_cap, _impl);
   }
   _VectorBase(_VectorBase&& _other) noexcept : _impl(std::move(_other._impl)) {
@@ -95,14 +94,14 @@ struct _VectorBase {
     }
   }
   static void __put(_VectorImpl& _impl) {
-    _AllocatorTraits::
-        deallocate(_impl, _impl._begin, _impl._finish - _impl._begin);
+    _AllocatorTraits::deallocate(_impl, _impl._begin,
+                                 _impl._finish - _impl._begin);
     _impl._begin = _impl._end = _impl._finish = nullptr;
   }
   static void __swap_allocator(_AllocatorType& _a, _AllocatorType& _b) {
     std::swap(_a, _b);
   }
-  static constexpr std::size_t __max_size() const noexcept {
+  static constexpr std::size_t __max_size() noexcept {
     return
         static_cast<std::size_t>(std::numeric_limits<std::ptrdiff_t>::max()) /
         sizeof(_ValueType);
@@ -144,13 +143,13 @@ class vector : protected __container_base::_VectorBase<T, Allocator> {
   vector() = default;
   explicit vector(const allocator_type& alloc) : _Base(alloc) {}
   explicit vector(size_type count, const value_type& value,
-                  const allocator_type& alloc = allocator_type()) :
-      _Base(count, alloc) {
+                  const allocator_type& alloc = allocator_type())
+      : _Base(count, alloc) {
     _impl._end = ginshio::stl::uninitialized_fill_n(_impl._begin, count, value);
   }
   explicit vector(size_type count,
-                  const allocator_type& alloc = allocator_type()) :
-      _Base(count, alloc) {
+                  const allocator_type& alloc = allocator_type())
+      : _Base(count, alloc) {
     try {
       for (size_type _n = 0; _n < count; ++_n) {
         ginshio::stl::construct(_impl._end);
@@ -162,26 +161,27 @@ class vector : protected __container_base::_VectorBase<T, Allocator> {
       throw;
     }
   }
-  template <typename InputIt, typename = typename
-            std::enable_if<std::is_base_of<
-                             std::input_iterator_tag, typename
-                             std::iterator_traits<InputIt>::iterator_category>::
-                           value>::type*>
+  template <typename InputIt,
+            typename = typename std::enable_if<
+                std::is_base_of<std::input_iterator_tag,
+                                typename std::iterator_traits<
+                                    InputIt>::iterator_category>::value>::type*>
   vector(InputIt first, InputIt last,
          const allocator_type& alloc = allocator_type()) : _Base(alloc) {
     using _Category = typename std::iterator_traits<InputIt>::iterator_category;
     vector::__range_init(first, last, _Category());
   }
-  vector(const vector& other) :
-      _Base(other.size(), _AllocatorTraits::
-            select_on_container_copy_construction(other.get_allocator())) {
-    _impl._end = ginshio::stl::
-        uninitialized_copy(other.begin(), other.end(), _impl._begin);
+  vector(const vector& other)
+      : _Base(other.size(),
+              _AllocatorTraits::select_on_container_copy_construction(
+                  other.get_allocator())) {
+    _impl._end = ginshio::stl::uninitialized_copy(other.begin(), other.end(),
+                                                  _impl._begin);
   }
   vector(const vector& other, const allocator_type& alloc)
       : _Base(other.size(), alloc) {
-    _impl._end = ginshio::stl::
-        uninitialized_copy(other.begin(), other.end(), _impl._begin);
+    _impl._end = ginshio::stl::uninitialized_copy(other.begin(), other.end(),
+                                                  _impl._begin);
   }
   vector(vector&& other) noexcept = default;
   vector(vector&& other, const allocator_type& alloc) : _Base(alloc) {
@@ -190,15 +190,15 @@ class vector : protected __container_base::_VectorBase<T, Allocator> {
       return;
     }
     _Base::__get(other.size(), _impl);
-    _impl._end = ginshio::stl::
-        uninitialized_move(other.begin(), other.end(), _impl._begin);
+    _impl._end = ginshio::stl::uninitialized_move(other.begin(), other.end(),
+                                                  _impl._begin);
     other._impl._end = other._impl._begin;
   }
   vector(std::initializer_list<value_type> ilist,
-         const allocator_type& alloc = allocator_type()) :
-      _Base(ilist.size(), alloc) {
-    _impl._end = ginshio::stl::
-        uninitialized_copy(ilist.begin(), ilist.end(), _impl._begin);
+         const allocator_type& alloc = allocator_type())
+      : _Base(ilist.size(), alloc) {
+    _impl._end = ginshio::stl::uninitialized_copy(ilist.begin(), ilist.end(),
+                                                  _impl._begin);
   }
 
   /////////////// destructor ///////////////
@@ -221,11 +221,11 @@ class vector : protected __container_base::_VectorBase<T, Allocator> {
       _impl._end = _impl._begin + count;
     }
   }
-  template <typename InputIt, typename = typename
-            std::enable_if<std::is_base_of<
-                             std::input_iterator_tag, typename
-                             std::iterator_traits<InputIt>::iterator_category>::
-                           value>::type*>
+  template <typename InputIt,
+            typename = typename std::enable_if<
+                std::is_base_of<std::input_iterator_tag,
+                                typename std::iterator_traits<
+                                    InputIt>::iterator_category>::value>::type*>
   void assign(InputIt first, InputIt last) {
     using _Category = typename std::iterator_traits<InputIt>::iterator_category;
     this->__assign_range_dispatch(first, last, _Category());
@@ -238,13 +238,12 @@ class vector : protected __container_base::_VectorBase<T, Allocator> {
     if (this == &other) {
       return *this;
     }
-    if (_AllocatorTraits::propagate_on_container_copy_assignment::value) {
-      if (other.get_allocator() != this->get_allocator()) {
-        ginshio::stl::destroy(_impl._begin, _impl._end);
-        _Base::__put(_impl);
-      }
-      static_cast<allocator_type>(_impl) =
-          static_cast<allocator_type>(other._impl);
+    if (_AllocatorTraits::propagate_on_container_copy_assignment::value &&
+        other.get_allocator() != this->get_allocator()) {
+      ginshio::stl::destroy(_impl._begin, _impl._end);
+      _Base::__put(_impl);
+      static_cast<allocator_type&>(_impl) =
+          static_cast<allocator_type&>(other._impl);
     }
     this->__assign_range_dispatch(other._impl._begin, other._impl._end,
                                   std::random_access_iterator_tag());
@@ -263,13 +262,11 @@ class vector : protected __container_base::_VectorBase<T, Allocator> {
   /////////////// element access ///////////////
  public:
   reference at(size_type pos) {
-    ginshio::stl::
-        __check_out_of_range("vector::at", pos, this->size());
+    ginshio::stl::__check_out_of_range("vector::at", pos, this->size());
     return _impl._begin[pos];
   }
   const_reference at(size_type pos) const {
-    ginshio::stl::
-        __check_out_of_range("vector::at", pos, this->size());
+    ginshio::stl::__check_out_of_range("vector::at", pos, this->size());
     return _impl._begin[pos];
   }
   reference operator[](size_type pos) { return _impl._begin[pos]; }
@@ -317,12 +314,12 @@ class vector : protected __container_base::_VectorBase<T, Allocator> {
     if (new_cap <= this->capacity()) {
       return;
     }
-    ginshio::stl::
-        __check_length_error("vector::reserve", new_cap, _Base::__max_size());
+    ginshio::stl::__check_length_error("vector::reserve", new_cap,
+                                       _Base::__max_size());
     _BaseImpl _old{_impl};
     _Base::__get(new_cap, _impl);
-    _impl._end = ginshio::stl::
-        uninitialized_move(_old._begin, _old._end, _impl._begin);
+    _impl._end =
+        ginshio::stl::uninitialized_move(_old._begin, _old._end, _impl._begin);
     ginshio::stl::destroy(_old._begin, _old._end);
     _Base::__put(_old);
   }
@@ -351,13 +348,12 @@ class vector : protected __container_base::_VectorBase<T, Allocator> {
   iterator insert(const_iterator pos, value_type&& value) {
     return this->emplace(pos, std::forward<value_type>(value));
   }
-  iterator insert(const_iterator pos,
-                  size_type count, const value_type& value);
-  template <typename InputIt, typename = typename
-            std::enable_if<std::is_base_of<
-                             std::input_iterator_tag, typename
-                             std::iterator_traits<InputIt>::iterator_category>::
-                           value>::type*>
+  iterator insert(const_iterator pos, size_type count, const value_type& value);
+  template <typename InputIt,
+            typename = typename std::enable_if<
+                std::is_base_of<std::input_iterator_tag,
+                                typename std::iterator_traits<
+                                    InputIt>::iterator_category>::value>::type*>
   iterator insert(const_iterator pos, InputIt first, InputIt last) {
     using _Category = typename std::iterator_traits<InputIt>::iterator_category;
     if (first != last) {
@@ -370,9 +366,8 @@ class vector : protected __container_base::_VectorBase<T, Allocator> {
   iterator insert(const_iterator pos, std::initializer_list<value_type> ilist) {
     const size_type _dist = static_cast<size_type>(pos - this->cbegin());
     if (0 < ilist.size()) {
-      this->__insert_range(_impl, const_cast<iterator>(pos),
-                           ilist.begin(), ilist.end(),
-                           ilist.size(), std::false_type());
+      this->__insert_range(_impl, const_cast<iterator>(pos), ilist.begin(),
+                           ilist.end(), ilist.size(), std::false_type());
     }
     return _impl._begin + _dist;
   }
@@ -393,14 +388,12 @@ class vector : protected __container_base::_VectorBase<T, Allocator> {
       return const_cast<iterator>(last);
     }
     iterator _old_end = _impl._end;
-    _impl._end = ginshio::stl::
-        move(const_cast<iterator>(last), _old_end, const_cast<iterator>(first));
+    _impl._end = ginshio::stl::move(const_cast<iterator>(last), _old_end,
+                                    const_cast<iterator>(first));
     ginshio::stl::destroy(_impl._end, _old_end);
     return const_cast<iterator>(first);
   }
-  void push_back(const value_type& value) {
-    this->emplace_back(value);
-  }
+  void push_back(const value_type& value) { this->emplace_back(value); }
   void push_back(value_type&& value) {
     this->emplace_back(std::forward<value_type>(value));
   }
@@ -439,9 +432,9 @@ class vector : protected __container_base::_VectorBase<T, Allocator> {
       _impl._end = _impl._begin + count;
     }
   }
-  void swap(vector& other)
-      noexcept(_AllocatorTraits::propagate_on_container_swap::value ||
-               _AllocatorTraits::is_always_equal::value) {
+  void swap(vector& other) noexcept(
+      _AllocatorTraits::propagate_on_container_swap::value ||
+      _AllocatorTraits::is_always_equal::value) {
     if (this == &other) {
       return;
     }
@@ -458,18 +451,20 @@ class vector : protected __container_base::_VectorBase<T, Allocator> {
   void __assign_range_dispatch(_ForwardIt _first, _ForwardIt _last,
                                std::forward_iterator_tag) {
     const size_type _len = static_cast<size_type>(std::distance(_first, _last));
+    if (_len == 0) {
+      return;
+    }
     if (this->capacity() < _len) {
       return vector{_first, _last, this->get_allocator()}._impl.__swap(_impl);
     }
     if (this->size() < _len) {
-      _impl._end = ginshio::stl::
-          uninitialized_copy(ginshio::stl::
-                             copy_n(_first, this->size(), _impl._begin).first,
-                             _last, _impl._end);
+      _impl._end = ginshio::stl::uninitialized_copy(
+          ginshio::stl::copy_n(_first, this->size(), _impl._begin).first, _last,
+          _impl._end);
       return;
     }
-    ginshio::stl::destroy(ginshio::stl::
-                          copy(_first, _last, _impl._begin), _impl._end);
+    ginshio::stl::destroy(ginshio::stl::copy(_first, _last, _impl._begin),
+                          _impl._end);
     _impl._end = _impl._begin + _len;
   }
 
@@ -485,28 +480,25 @@ class vector : protected __container_base::_VectorBase<T, Allocator> {
                              _RandomIt _first, _RandomIt _last,
                              const size_type& _len, std::true_type);
   template <typename _InputIt>
-  void __insert_range_dispatch(const_iterator _pos,
-                               _InputIt _first, _InputIt _last,
-                               std::input_iterator_tag);
+  void __insert_range_dispatch(const_iterator _pos, _InputIt _first,
+                               _InputIt _last, std::input_iterator_tag);
   template <typename _ForwardIt>
-  void __insert_range_dispatch(const_iterator _pos,
-                               _ForwardIt _first, _ForwardIt _last,
-                               std::forward_iterator_tag) {
+  void __insert_range_dispatch(const_iterator _pos, _ForwardIt _first,
+                               _ForwardIt _last, std::forward_iterator_tag) {
     vector::__insert_range(_impl, const_cast<iterator>(_pos), _first, _last,
                            std::distance(_first, _last), std::false_type());
   }
-  template <typename _RandomIt, typename = typename
-            std::enable_if<std::is_same<_RandomIt, iterator>::value ||
-                           std::is_same<_RandomIt, const_iterator>::value>::
-            type*>
-  void __insert_range_dispatch(const_iterator _pos,
-                               _RandomIt _first, _RandomIt _last,
+  template <typename _RandomIt,
+            typename = typename std::enable_if<
+                std::is_same<_RandomIt, iterator>::value ||
+                std::is_same<_RandomIt, const_iterator>::value>::type*>
+  void __insert_range_dispatch(const_iterator _pos, _RandomIt _first,
+                               _RandomIt _last,
                                std::random_access_iterator_tag) {
     if (_impl._begin <= std::addressof(*_first) &&
         std::addressof(*_last) <= _impl._end) {
-      return vector::__insert_range(_impl, const_cast<iterator>(_pos),
-                                    _first, _last, _last - _first,
-                                    std::true_type());
+      return vector::__insert_range(_impl, const_cast<iterator>(_pos), _first,
+                                    _last, _last - _first, std::true_type());
     }
     vector::__insert_range(_impl, const_cast<iterator>(_pos), _first, _last,
                            _last - _first, std::false_type());
@@ -516,21 +508,21 @@ class vector : protected __container_base::_VectorBase<T, Allocator> {
  private:
   /**
    * @function __reallocate(iterator):
-   **** reallocate capacity, move original data
-   **** 重新分配容量, 使用 move 将原始数据移动到新空间
+   *     reallocate capacity, move original data
+   *     重新分配容量, 使用 move 将原始数据移动到新空间
    * @param _impl(_BaseImpl&): vector original data; vector 原始数据
    * @param _dist(const size_type&): length of the first half of the element;
-   **** 原始数据中, 从 pos 到 begin 的距离
+   *     原始数据中, 从 pos 到 begin 的距离
    * @param _len(const size_type&): length of the element to be inserted;
-   **** 待插入元素的长度
-   * @return (iterator): start iterator of to be inserted; 待插入元素的起始迭代器
+   *     待插入元素的长度
+   * @return (iterator): start iterator of to be inserted;
+   *     待插入元素的起始迭代器
    */
-  static iterator __reallocate(_BaseImpl& _impl,
-                               const size_type& _dist, const size_type& _len);
+  static iterator __reallocate(_BaseImpl& _impl, const size_type& _dist,
+                               const size_type& _len);
 
   template <typename _InputIt>
-  void __range_init(_InputIt _first, _InputIt _last,
-                    std::input_iterator_tag);
+  void __range_init(_InputIt _first, _InputIt _last, std::input_iterator_tag);
   template <typename _ForwardIt>
   void __range_init(_ForwardIt _first, _ForwardIt _last,
                     std::forward_iterator_tag) {
@@ -560,7 +552,7 @@ template <typename T, typename Allocator>
 constexpr bool operator!=(const vector<T, Allocator>& lhs,
                           const vector<T, Allocator>& rhs) {
   return &lhs != &rhs && (lhs.size() != rhs.size() ||
-                          std::equal(lhs.begin(), lhs.end(), rhs.begin()));
+                          !std::equal(lhs.begin(), lhs.end(), rhs.begin()));
 }
 template <typename T, typename Allocator>
 constexpr bool operator<(const vector<T, Allocator>& lhs,
@@ -594,15 +586,15 @@ inline void swap(vector<T, Allocator>& lhs, vector<T, Allocator>& rhs) {
 }
 
 template <typename T, typename Allocator, typename U>
-inline auto erase(vector<T, Allocator>& v, const U& value)
-    -> typename vector<T, Allocator>::size_type {
+inline auto erase(vector<T, Allocator>& v, const U& value) ->
+    typename vector<T, Allocator>::size_type {
   typename vector<T, Allocator>::size_type size = v.size();
   v.erase(std::remove(v.begin(), v.end(), value), v.end());
   return size - v.size();
 }
 template <typename T, typename Allocator, typename Pred>
-inline auto erase_if(vector<T, Allocator>& v, Pred pred)
-    -> typename vector<T, Allocator>::size_type {
+inline auto erase_if(vector<T, Allocator>& v, Pred pred) ->
+    typename vector<T, Allocator>::size_type {
   typename vector<T, Allocator>::size_type size = v.size();
   v.erase(std::remove_if(v.begin(), v.end(), pred), v.end());
   return size - v.size();
@@ -610,6 +602,8 @@ inline auto erase_if(vector<T, Allocator>& v, Pred pred)
 
 }  // namespace stl
 }  // namespace ginshio
+
+
 
 
 
@@ -622,19 +616,19 @@ inline void swap(ginshio::stl::vector<T, Allocator>& lhs,
 }
 
 template <typename T, typename Allocator, typename U>
-inline auto erase(ginshio::stl::vector<T, Allocator>& v, const U& value)
-    -> typename ginshio::stl::vector<T, Allocator>::size_type {
+inline auto erase(ginshio::stl::vector<T, Allocator>& v, const U& value) ->
+    typename ginshio::stl::vector<T, Allocator>::size_type {
   auto size = v.size();
   v.erase(std::remove(v.begin(), v.end(), value), v.end());
   return size - v.size();
 }
 template <typename T, typename Allocator, typename Pred>
-inline auto erase_if(ginshio::stl::vector<T, Allocator>& v, Pred pred)
-    -> typename ginshio::stl::vector<T, Allocator>::size_type {
+inline auto erase_if(ginshio::stl::vector<T, Allocator>& v, Pred pred) ->
+    typename ginshio::stl::vector<T, Allocator>::size_type {
   auto size = v.size();
   v.erase(std::remove_if(v.begin(), v.end(), pred), v.end());
   return size - v.size();
 }
-} // namespace std
+}  // namespace std
 
-#endif // GINSHIO_STL__STL_VECTOR_HH_
+#endif  // GINSHIO_STL__CONTAINER_STL_VECTOR_HH_

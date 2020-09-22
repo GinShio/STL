@@ -24,9 +24,8 @@
  * purpose.  It is provided "as is" without express or implied warranty.
  */
 
-
-#ifndef GINSHIO_STL__QUEUE_HH_
-#define GINSHIO_STL__QUEUE_HH_ 1
+#ifndef GINSHIO_STL__CONTAINER_QUEUE_HH_
+#define GINSHIO_STL__CONTAINER_QUEUE_HH_ 1
 
 #include "deque.hpp"
 
@@ -42,8 +41,8 @@ class queue {
   /////////////// private type ///////////////
  private:
   template <typename _Alloc>
-  using _UseAlloc = typename
-      std::enable_if<std::uses_allocator<Container, _Alloc>::value>::type*;
+  using _UseAlloc = typename std::enable_if<
+      std::uses_allocator<Container, _Alloc>::value>::type*;
   /////////////// define type ///////////////
  public:
   using container_type = Container;
@@ -70,8 +69,8 @@ class queue {
   template <typename Alloc, typename = _UseAlloc<Alloc>>
   explicit queue(const Container& cont, const Alloc& alloc) : c(cont, alloc) {}
   template <typename Alloc, typename = _UseAlloc<Alloc>>
-  explicit queue(Container&& cont, const Alloc& alloc) :
-      c(std::move(cont), alloc) {}
+  explicit queue(Container&& cont, const Alloc& alloc)
+      : c(std::move(cont), alloc) {}
   template <typename Alloc, typename = _UseAlloc<Alloc>>
   explicit queue(const queue& cont, const Alloc& alloc) : c(cont.c, alloc) {}
   template <typename Alloc, typename = _UseAlloc<Alloc>>
@@ -158,29 +157,30 @@ constexpr bool operator>=(const queue<T, Container>& lhs,
 
 
 
-///////////////////////// speecialization /////////////////////////
+///////////////////////// specialization /////////////////////////
 template <typename T, typename Container>
-inline void swap(const queue<T, Container>& lhs,
-                 const queue<T, Container>& rhs) {
+inline void swap(queue<T, Container>& lhs, queue<T, Container>& rhs) {
   lhs.swap(rhs);
 }
 
-} // namespace stl
-} // namespace ginshio
+}  // namespace stl
+}  // namespace ginshio
+
+
 
 
 
 namespace std {
-///////////////////////// speecialization /////////////////////////
+///////////////////////// specialization /////////////////////////
 template <typename T, typename Container>
-inline void swap(const ginshio::stl::queue<T, Container>& lhs,
-                 const ginshio::stl::queue<T, Container>& rhs) {
+inline void swap(ginshio::stl::queue<T, Container>& lhs,
+                 ginshio::stl::queue<T, Container>& rhs) {
   lhs.swap(rhs);
 }
 
 template <typename T, typename Container, typename Allocator>
-struct uses_allocator<ginshio::stl::queue<T, Container>, Allocator> :
-      public std::uses_allocator<Container, Allocator>::type {};
-} // namespace std
+struct uses_allocator<ginshio::stl::queue<T, Container>, Allocator>
+    : public std::uses_allocator<Container, Allocator>::type {};
+}  // namespace std
 
-#endif // GINSHIO_STL__QUEUE_HH_
+#endif  // GINSHIO_STL__CONTAINER_QUEUE_HH_

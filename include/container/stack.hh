@@ -24,9 +24,8 @@
  * purpose.  It is provided "as is" without express or implied warranty.
  */
 
-
-#ifndef GINSHIO_STL__STACK_HH_
-#define GINSHIO_STL__STACK_HH_ 1
+#ifndef GINSHIO_STL__CONTAINER_STACK_HH_
+#define GINSHIO_STL__CONTAINER_STACK_HH_ 1
 
 #include "deque.hpp"
 
@@ -42,8 +41,8 @@ class stack {
   /////////////// private type ///////////////
  private:
   template <typename _Alloc>
-  using _UseAlloc = typename
-      std::enable_if<std::uses_allocator<Container, _Alloc>::value>::type*;
+  using _UseAlloc = typename std::enable_if<
+      std::uses_allocator<Container, _Alloc>::value>::type*;
   /////////////// member type ///////////////
  public:
   using container_type = Container;
@@ -70,8 +69,8 @@ class stack {
   template <typename Alloc, typename = _UseAlloc<Alloc>>
   explicit stack(const Container& cont, const Alloc& alloc) : c(cont, alloc) {}
   template <typename Alloc, typename = _UseAlloc<Alloc>>
-  explicit stack(Container&& cont, const Alloc& alloc) :
-      c(std::move(cont), alloc) {}
+  explicit stack(Container&& cont, const Alloc& alloc)
+      : c(std::move(cont), alloc) {}
   template <typename Alloc, typename = _UseAlloc<Alloc>>
   explicit stack(const stack& cont, const Alloc& alloc) : c(cont.c, alloc) {}
   template <typename Alloc, typename = _UseAlloc<Alloc>>
@@ -155,28 +154,31 @@ constexpr bool operator>=(const stack<T, Container>& lhs,
 }
 
 
-///////////////////////// speecialization /////////////////////////
+
+///////////////////////// specialization /////////////////////////
 template <typename T, typename Container>
-inline void swap(const stack<T, Container>& lhs,
-                 const stack<T, Container>& rhs) {
+inline void swap(stack<T, Container>& lhs, stack<T, Container>& rhs) {
   lhs.swap(rhs);
 }
 
-} // namespace stl
-} // namespace ginshio
+}  // namespace stl
+}  // namespace ginshio
+
+
+
 
 
 namespace std {
-///////////////////////// speecialization /////////////////////////
+///////////////////////// specialization /////////////////////////
 template <typename T, typename Container>
-inline void swap(const ginshio::stl::stack<T, Container>& lhs,
-                 const ginshio::stl::stack<T, Container>& rhs) {
+inline void swap(ginshio::stl::stack<T, Container>& lhs,
+                 ginshio::stl::stack<T, Container>& rhs) {
   lhs.swap(rhs);
 }
 
 template <typename T, typename Container, typename Allocator>
 struct uses_allocator<ginshio::stl::stack<T, Container>, Allocator>
     : public std::uses_allocator<Container, Allocator>::type {};
-} // namespace std
+}  // namespace std
 
-#endif // GINSHIO_STL__STACK_HH_
+#endif  // GINSHIO_STL__CONTAINER_STACK_HH_

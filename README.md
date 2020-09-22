@@ -26,22 +26,25 @@ v.erase(v.begin() + 2, v.end());  // {1, 2}
  - [libc++](https://libcxx.llvm.org/docs/index.html)
  - [STLport](http://www.stlport.org/)
  - [Qt Container](https://doc.qt.io/qt-5/containers.html)
+ - [EASTL](https://github.com/electronicarts/EASTL)
 
 
 ## TODO
   - 容器 及 适配器
     - 顺序容器 (string)
     - 容器适配器 (priority_queue)
-    - 有序关联容器
+    - 有序关联容器的 `note_type` 与 `find` 相关函数, 以及其他底层实现 (**avl tree**)
     - 无序关联容器
   - 分配器
   - 迭代器
   - 算法
-  - 完善的 **TestCase** 和 **doc**
+  - 完善的 **TestCase** 、 **Benchmark** 和 **Document**
+  - 禁止异常
+  - 修改为 pmr(polymorphic) 分配器
 
 
 ## 参与贡献方式
-你可以开启 **issue** 或提交 **PR**, 或者通过 [邮箱](ginshio78@gmail.com) 等方式, 感谢你对此项目的关注与贡献
+你可以开启 **issue** 或提交 **PR** 等方式, 感谢你对此项目的关注与贡献
 
 
 ## 开源协议

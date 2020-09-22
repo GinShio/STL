@@ -4,11 +4,10 @@
 #include "base/stl_check.hh"
 #include "base/stl_init.hh"
 
+#include <cstddef>
 #include <iterator>
 #include <limits>
 #include <utility>
-
-#include <cstddef>
 
 namespace ginshio {
 namespace stl {
@@ -19,6 +18,7 @@ class array {
   /////////////// member type ///////////////
  private:
   using _ArrayType = T[N];
+
  public:
   using value_type = T;
   using size_type = std::size_t;
@@ -62,9 +62,9 @@ class array {
   iterator begin() noexcept { return data_; }
   constexpr const_iterator begin() const noexcept { return data_; }
   constexpr const_iterator cbegin() const noexcept { return data_; }
-  iterator end() noexcept { return data_+ N; }
-  constexpr const_iterator end() const noexcept { return data_+ N; }
-  constexpr const_iterator cend() const noexcept { return data_+ N; }
+  iterator end() noexcept { return data_ + N; }
+  constexpr const_iterator end() const noexcept { return data_ + N; }
+  constexpr const_iterator cend() const noexcept { return data_ + N; }
   reverse_iterator rbegin() noexcept { return reverse_iterator(data_ + N); }
   constexpr const_reverse_iterator rbegin() const noexcept {
     return const_reverse_iterator(data_ + N);
@@ -169,27 +169,27 @@ constexpr const T&& get(const array<T, N>&& arr) noexcept {
 #if __cplusplus > 201103L
 namespace __implement {
 template <typename T, std::size_t N, std::size_t... I>
-constexpr auto to_array(T (&a)[N], std::index_sequence<I...>)
-    -> array<typename std::remove_cv<T>::type, N> {
+constexpr auto to_array(T (&a)[N], std::index_sequence<I...>) ->
+    array<typename std::remove_cv<T>::type, N> {
   return {{a[I]...}};
 }
 template <typename T, std::size_t N, std::size_t... I>
-constexpr auto to_array(T (&&a)[N], std::index_sequence<I...>)
-    -> array<typename std::remove_cv<T>::type, N> {
+constexpr auto to_array(T(&&a)[N], std::index_sequence<I...>) ->
+    array<typename std::remove_cv<T>::type, N> {
   return {{std::move(a[I])...}};
 }
-} // namespace __implement
+}  // namespace __implement
 template <typename T, std::size_t N>
-constexpr auto to_array(T (&a)[N])
-    -> array<typename std::remove_cv<T>::type, N> {
+constexpr auto to_array(T (&a)[N]) ->
+    array<typename std::remove_cv<T>::type, N> {
   return __implement::to_array(a, std::make_index_sequence<N>());
 }
 template <typename T, std::size_t N>
-constexpr auto to_array(T (&&a)[N])
-    -> array<typename std::remove_cv<T>::type, N> {
+constexpr auto to_array(T(&&a)[N]) ->
+    array<typename std::remove_cv<T>::type, N> {
   return __implement::to_array(std::move(a), std::make_index_sequence<N>());
 }
-#else  // __cplusplus <= 201402L
+#else   // __cplusplus <= 201402L
 template <typename T, std::size_t N>
 auto to_array(T (&a)[N]) -> array<typename std::remove_cv<T>::type, N> {
   array<typename std::remove_cv<T>::type, N> arr;
@@ -199,32 +199,34 @@ auto to_array(T (&a)[N]) -> array<typename std::remove_cv<T>::type, N> {
   return arr;
 }
 template <typename T, std::size_t N>
-auto to_array(T (&&a)[N]) -> array<typename std::remove_cv<T>::type, N> {
+auto to_array(T(&&a)[N]) -> array<typename std::remove_cv<T>::type, N> {
   array<typename std::remove_cv<T>::type, N> arr;
   for (std::size_t i = 0; i < N; ++i) {
     arr[i] = std::move(a[i]);
   }
   return arr;
 }
-#endif // end: __cplusplus > 201402L
-
-
+#endif  // __cplusplus > 201402L
 
 ///////////////////////// helper class /////////////////////////
-template<std::size_t I, class T> struct tuple_element;
+template <std::size_t I, class T>
+struct tuple_element;
 template <std::size_t I, typename T, std::size_t N>
 struct tuple_element<I, array<T, N>> {
   static_assert(I < N, "Index must be within the range of the array");
   using type = T;
 };
 
-template <typename T> struct tuple_size;
+template <typename T>
+struct tuple_size;
 template <typename T, std::size_t N>
-struct tuple_size<array<T, N>> :
-      public std::integral_constant<std::size_t, N> {};
+struct tuple_size<array<T, N>> : public std::integral_constant<std::size_t, N> {
+};
 
 }  // namespace stl
 }  // namespace ginshio
+
+
 
 
 
@@ -237,17 +239,19 @@ inline void swap(ginshio::stl::array<T, N>& lhs,
 }
 
 ///////////////////////// helper class /////////////////////////
-template<std::size_t I, class T> struct tuple_element;
+template <std::size_t I, class T>
+struct tuple_element;
 template <std::size_t I, typename T, std::size_t N>
 struct tuple_element<I, ginshio::stl::array<T, N>> {
   static_assert(I < N, "Index must be within the range of the array");
   using type = T;
 };
 
-template<typename T> struct tuple_size;
+template <typename T>
+struct tuple_size;
 template <typename T, size_t N>
-struct tuple_size<ginshio::stl::array<T, N>> :
-      public integral_constant<size_t, N> {};
-} // namespace std
+struct tuple_size<ginshio::stl::array<T, N>>
+    : public integral_constant<size_t, N> {};
+}  // namespace std
 
-#endif // GINSHIO_STL__ARRAY_HPP_
+#endif  // GINSHIO_STL__ARRAY_HPP_

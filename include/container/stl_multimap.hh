@@ -27,21 +27,27 @@
 #ifndef GINSHIO_STL__CONTAINER_STL_MULTIMAP_HH_
 #define GINSHIO_STL__CONTAINER_STL_MULTIMAP_HH_ 1
 
-#include "container/stl_map.hh"
-
 namespace ginshio {
 namespace stl {
 
+template <typename Key, typename T,
+          typename Compare, typename Allocator, typename Container>
+class map;
+
 ///////////////////////// multimap /////////////////////////
 template <typename Key, typename T,
-          class Container =
-              ginshio::stl::rb_tree<tree::associative_pair<const Key, T>>>
+          typename Compare = ::std::less<Key>,
+          typename Allocator = ::std::allocator<::std::pair<const Key, T>>,
+          typename Container = ::ginshio::stl::rb_tree<
+            ::std::pair<const Key, T>, Compare,
+            ::ginshio::stl::tree::_KeyOfValue<::std::pair<const Key, T>>,
+            Allocator>>
 class multimap {
   /////////////// private type ///////////////
  private:
   template <typename _Alloc>
-  using _UseAlloc = typename std::enable_if<
-      std::uses_allocator<Container, _Alloc>::value>::type*;
+  using _UseAlloc = typename ::std::enable_if<
+      ::std::uses_allocator<Container, _Alloc>::value>::type;
   /////////////// member type ///////////////
  public:
   using key_type = Key;
@@ -51,6 +57,8 @@ class multimap {
   using allocator_type = typename Container::allocator_type;
   using size_type = typename Container::size_type;
   using difference_type = typename Container::difference_type;
+  using key_of_value = typename Container::key_of_value;
+  using key_compare = typename Container::key_compare;
   using reference = typename Container::reference;
   using const_reference = typename Container::const_reference;
   using pointer = typename Container::pointer;
@@ -59,7 +67,8 @@ class multimap {
   using const_iterator = typename Container::const_iterator;
   using reverse_iterator = typename Container::reverse_iterator;
   using const_reverse_iterator = typename Container::const_reverse_iterator;
-  // TODO: node_type && insert_return_type
+  using node_type = typename Container::node_type;
+  // TODO: insert_return_type
 
   /////////////// data member ///////////////
  protected:
@@ -70,10 +79,8 @@ class multimap {
   multimap() = default;
   explicit multimap(const allocator_type& alloc) : c(alloc) {}
   template <typename InputIt,
-            typename = typename std::enable_if<
-                std::is_base_of<std::input_iterator_tag,
-                                typename std::iterator_traits<
-                                    InputIt>::iterator_category>::value>::type*>
+            typename = typename ::std::enable_if<
+              ::ginshio::stl::is_input_iterator<InputIt>::value>::type>
   multimap(InputIt first, InputIt last,
            const allocator_type& alloc = allocator_type())
       : c(first, last, alloc) {}
@@ -82,8 +89,8 @@ class multimap {
       : c(other.c, alloc) {}
   multimap(multimap&& other) noexcept = default;
   multimap(multimap&& other, const allocator_type& alloc)
-      : c(std::move(other.c), alloc) {}
-  multimap(std::initializer_list<value_type> ilist,
+      : c(::std::move(other.c), alloc) {}
+  multimap(::std::initializer_list<value_type> ilist,
            const allocator_type& alloc = allocator_type()) : c(ilist, alloc) {}
 
   /////////////// destructor ///////////////
@@ -93,39 +100,39 @@ class multimap {
   /////////////// member function ///////////////
  public:
   template <typename InputIt,
-            typename = typename std::enable_if<
-              std::is_base_of<std::input_iterator_tag,
-                              typename std::iterator_traits<
-                                InputIt>::iterator_category>::value>::type*>
+            typename = typename ::std::enable_if<
+              ::ginshio::stl::is_input_iterator<InputIt>::value>::type>
   void assign(InputIt first, InputIt last) {
     c.assign_equal(first, last);
   }
-  void assign(std::initializer_list<value_type> ilist) {
+  void assign(::std::initializer_list<value_type> ilist) {
     c.assign_equal(ilist);
   }
   template <typename Tree,
-            typename = typename std::enable_if<
-                std::is_base_of<
-                    __container_base::_TreeBase<value_type, allocator_type>,
-                    Tree>::value>::type*>
-  multimap& operator=(const map<key_type, mapped_type, Tree>& other) {
+            typename = typename ::std::enable_if<::std::is_base_of<
+              __container_base::_TreeBase<
+                value_type, key_compare, key_of_value, allocator_type>,
+              Tree>::value>::type>
+  multimap& operator=(const ::ginshio::stl::map<key_type, mapped_type,
+                      key_compare, allocator_type, Tree>& other) {
     c.assign_equal_copy_allocator(other.c);
     return *this;
   }
   template <typename Tree,
-            typename = typename std::enable_if<
-                std::is_base_of<
-                    __container_base::_TreeBase<value_type, allocator_type>,
-                    Tree>::value>::type*>
-  multimap& operator=(const multimap<key_type, mapped_type, Tree>& other) {
+            typename = typename ::std::enable_if<::std::is_base_of<
+              __container_base::_TreeBase<
+                value_type, key_compare, key_of_value, allocator_type>,
+              Tree>::value>::type>
+  multimap& operator=(const multimap<key_type, mapped_type,
+                      key_compare, allocator_type, Tree>& other) {
     c.assign_equal_copy_allocator(other.c);
     return *this;
   }
   multimap& operator=(multimap&& other) {
-    c.assign_equal_move_allocator(std::move(other.c));
+    c.assign_equal_move_allocator(::std::move(other.c));
     return *this;
   }
-  multimap& operator=(std::initializer_list<value_type> ilist) {
+  multimap& operator=(::std::initializer_list<value_type> ilist) {
     c.assign_equal(ilist);
     return *this;
   }
@@ -166,36 +173,38 @@ class multimap {
   void clear() noexcept { c.clear(); }
   iterator insert(const value_type& value) { return c.emplace_equal(value); }
   iterator insert(value_type&& value) {
-    return c.emplace_equal(std::forward(value));
+    return c.emplace_equal(::std::forward<value_type>(value));
   }
   template <typename P>
-  iterator insert(P&& value) { return c.emplace_equal(std::forward<P>(value)); }
+  iterator insert(P&& value) {
+    return c.emplace_equal(::std::forward<P>(value));
+  }
   iterator insert(const_iterator hint, const value_type& value) {
     return c.emplace_hint_equal(hint, value);
   }
   iterator insert(const_iterator hint, value_type&& value) {
-    return c.emplace_hint_equal(hint, std::forward(value));
+    return c.emplace_hint_equal(hint, ::std::forward<value_type>(value));
   }
   template <typename P>
   iterator insert(const_iterator hint, P&& value) {
-    return c.emplace_hint_equal(hint, std::forward<P>(value));
+    return c.emplace_hint_equal(hint, ::std::forward<P>(value));
   }
-  template <typename InputIt>
+  template <typename InputIt,
+            typename = typename ::std::enable_if<
+              ::ginshio::stl::is_input_iterator<InputIt>::value>::type>
   void insert(InputIt first, InputIt last) {
-    while (first != last) {
-      c.emplace_equal(*first);
-    }
+    c.insert_equal(first, last);
   }
-  void insert(std::initializer_list<value_type> ilist) {
+  void insert(::std::initializer_list<value_type> ilist) {
     for (auto& value : ilist) {
-      c.emplace_equal(std::forward(value));
+      c.emplace_equal(value);
     }
   }
   // TODO: insert_return_type insert(node_type&& nh);
   // TODO: iterator insert(const_iterator hint, node_type&& nh);
   template <typename... Args>
   iterator emplace(Args&&... args) {
-    return c.emplace_equal(std::forward<Args>(args)...);
+    return c.emplace_equal(::std::forward<Args>(args)...);
   }
   template <typename... Args>
   iterator emplace_hint(const_iterator hint, Args&&... args) {
@@ -206,55 +215,90 @@ class multimap {
     return c.erase(first, last);
   }
   size_type erase(const key_type& key) { return c.erase(key); }
-  // TODO: extract
+  node_type extract(const_iterator pos) { return c.extract(pos); }
+  node_type extract(const key_type& key) { return c.extract(key); }
   void swap(multimap& other) { c.swap(other.c); }
-  template <typename Tree, typename Alloc,
-            typename = typename std::enable_if<
-                std::is_base_of<
-                    __container_base::_TreeBase<value_type, Alloc>,
-                    Tree>::value &&
-                !std::is_same<Tree, Container>::value>::type*>
-  void merge(const multimap<key_type, mapped_type, Tree>& other) {
+  template <typename Tree,
+            typename = typename ::std::enable_if<
+              ::std::is_base_of<
+                __container_base::_TreeBase<
+                  value_type, key_compare, key_of_value, allocator_type>,
+                Tree>::value &&
+              !std::is_same<Tree, Container>::value>::type>
+  void merge(const multimap<key_type, mapped_type,
+             key_compare, allocator_type, Tree>& other) {
     c.merge_equal(other.c);
   }
-  void merge(multimap& other) { c.merge_equal(std::move(other.c)); }
-  void merge(multimap&& other) { c.merge_equal(std::move(other.c)); }
-  template <typename Tree, typename Alloc,
-            typename = typename std::enable_if<
-                std::is_base_of<
-                    __container_base::_TreeBase<value_type, Alloc>,
-                    Tree>::value &&
-                !std::is_same<Tree, Container>::value>::type*>
-  void merge(const map<key_type, mapped_type, Tree>& other) {
+  void merge(multimap& other) { c.merge_equal(::std::move(other.c)); }
+  void merge(multimap&& other) { c.merge_equal(::std::move(other.c)); }
+  template <typename Tree,
+            typename = typename ::std::enable_if<
+              ::std::is_base_of<
+                __container_base::_TreeBase<
+                  value_type, key_compare, key_of_value, allocator_type>,
+                Tree>::value &&
+              !std::is_same<Tree, Container>::value>::type>
+  void merge(const map<key_type, mapped_type,
+             key_compare, allocator_type, Tree>& other) {
     c.merge_equal(other.c);
   }
-  void merge(map<key_type, mapped_type, container_type>& other) {
-    c.merge_equal(std::move(other.c));
+  void merge(map<key_type, mapped_type,
+             key_compare, allocator_type, container_type>& other) {
+    c.merge_equal(::std::move(other.c));
   }
-  void merge(map<key_type, mapped_type, container_type>&& other) {
-    c.merge_equal(std::move(other.c));
+  void merge(map<key_type, mapped_type,
+             key_compare, allocator_type, container_type>&& other) {
+    c.merge_equal(::std::move(other.c));
   }
 
   /////////////// find ///////////////
-  /////////////// TODO: template <typename K> ///////////////
  public:
   size_type count(const key_type& key) const { return c.count(key); }
+  template <typename K>
+  size_type count(const K& x) const { return c.count(x); }
   iterator find(const key_type& key) { return c.find(key); }
   const_iterator find(const key_type& key) const { return c.find(key); }
+  template <typename K>
+  iterator find(const K& key) { return c.find(key); }
+  template <typename K>
+  const_iterator find(const K& key) const { return c.find(key); }
   bool contains(const key_type& key) const { return c.find(key) != c.end(); }
-  std::pair<iterator, iterator> equal_range(const key_type& key) {
+  template <typename K>
+  bool contains(const K& key) const { return c.find(key) != c.end(); }
+  ::std::pair<iterator, iterator> equal_range(const key_type& key) {
     return c.equal_range(key);
   }
   auto equal_range(const key_type& key) const
-      -> std::pair<const_iterator, const_iterator> {
+      -> ::std::pair<const_iterator, const_iterator> {
+    return c.equal_range(key);
+  }
+  template <typename K>
+  ::std::pair<iterator, iterator> equal_range(const K& key) {
+    return c.equal_range(key);
+  }
+  template <typename K>
+  auto equal_range(const K& key) const
+      -> ::std::pair<const_iterator, const_iterator> {
     return c.equal_range(key);
   }
   iterator lower_bound(const key_type& key) { return c.lower_bound(key); }
   const_iterator lower_bound(const key_type& key) const {
     return c.lower_bound(key);
   }
+  template <typename K>
+  iterator lower_bound(const K& key) { return c.lower_bound(key); }
+  template <typename K>
+  const_iterator lower_bound(const K& key) const {
+    return c.lower_bound(key);
+  }
   iterator upper_bound(const key_type& key) { return c.upper_bound(key); }
   const_iterator upper_bound(const key_type& key) const {
+    return c.upper_bound(key);
+  }
+  template <typename K>
+  iterator upper_bound(const K& key) { return c.upper_bound(key); }
+  template <typename K>
+  const_iterator upper_bound(const K& key) const {
     return c.upper_bound(key);
   }
 };
@@ -270,49 +314,64 @@ using MultiMapConstIterator = typename multimap<Key, T>::const_iterator;
 
 
 ///////////////////////// comparison operators ////////////////////////////
-template <typename Key, typename T, typename Container>
-constexpr bool operator==(const multimap<Key, T, Container>& lhs,
-                          const multimap<Key, T, Container>& rhs) {
+template <typename Key, typename T,
+          typename Compare, typename Allocator, typename Container>
+constexpr bool operator==(
+    const multimap<Key, T, Compare, Allocator, Container>& lhs,
+    const multimap<Key, T, Compare, Allocator, Container>& rhs) {
   return lhs.get_container() == rhs.get_container();
 }
-template <typename Key, typename T, typename Container>
-constexpr bool operator!=(const multimap<Key, T, Container>& lhs,
-                          const multimap<Key, T, Container>& rhs) {
+template <typename Key, typename T,
+          typename Compare, typename Allocator, typename Container>
+constexpr bool operator!=(
+    const multimap<Key, T, Compare, Allocator, Container>& lhs,
+    const multimap<Key, T, Compare, Allocator, Container>& rhs) {
   return lhs.get_container() != rhs.get_container();
 }
-template <typename Key, typename T, typename Container>
-constexpr bool operator<(const multimap<Key, T, Container>& lhs,
-                         const multimap<Key, T, Container>& rhs) {
+template <typename Key, typename T,
+          typename Compare, typename Allocator, typename Container>
+constexpr bool operator<(
+    const multimap<Key, T, Compare, Allocator, Container>& lhs,
+    const multimap<Key, T, Compare, Allocator, Container>& rhs) {
   return lhs.get_container() < rhs.get_container();
 }
-template <typename Key, typename T, typename Container>
-constexpr bool operator>(const multimap<Key, T, Container>& lhs,
-                         const multimap<Key, T, Container>& rhs) {
+template <typename Key, typename T,
+          typename Compare, typename Allocator, typename Container>
+constexpr bool operator>(
+    const multimap<Key, T, Compare, Allocator, Container>& lhs,
+    const multimap<Key, T, Compare, Allocator, Container>& rhs) {
   return lhs.get_container() > rhs.get_container();
 }
-template <typename Key, typename T, typename Container>
-constexpr bool operator<=(const multimap<Key, T, Container>& lhs,
-                          const multimap<Key, T, Container>& rhs) {
+template <typename Key, typename T,
+          typename Compare, typename Allocator, typename Container>
+constexpr bool operator<=(
+    const multimap<Key, T, Compare, Allocator, Container>& lhs,
+    const multimap<Key, T, Compare, Allocator, Container>& rhs) {
   return !(rhs.get_container() < lhs.get_container());
 }
-template <typename Key, typename T, typename Container>
-constexpr bool operator>=(const multimap<Key, T, Container>& lhs,
-                          const multimap<Key, T, Container>& rhs) {
+template <typename Key, typename T,
+          typename Compare, typename Allocator, typename Container>
+constexpr bool operator>=(
+    const multimap<Key, T, Compare, Allocator, Container>& lhs,
+    const multimap<Key, T, Compare, Allocator, Container>& rhs) {
   return !(lhs.get_container() < rhs.get_container());
 }
 
 
 
 ///////////////////////// specialization /////////////////////////
-template <typename Key, typename T, typename Container>
-inline void swap(multimap<Key, T, Container>& lhs,
-                 multimap<Key, T, Container>& rhs) {
+template <typename Key, typename T,
+          typename Compare, typename Allocator, typename Container>
+inline void swap(
+    multimap<Key, T, Compare, Allocator, Container>& lhs,
+    multimap<Key, T, Compare, Allocator, Container>& rhs) {
   lhs.swap(rhs);
 }
 
-template <typename Key, typename T, typename Container, typename Pred>
-auto erase_if(multimap<Key, T, Container>& c, Pred pred) ->
-    typename multimap<Key, T, Container>::size_type {
+template <typename Key, typename T, typename Compare,
+          typename Allocator, typename Container, typename Pred>
+auto erase_if(multimap<Key, T, Compare, Allocator, Container>& c, Pred pred) ->
+    typename multimap<Key, T, Compare, Allocator, Container>::size_type {
   return erase_if(c.get_container(), pred);
 }
 
@@ -325,16 +384,22 @@ auto erase_if(multimap<Key, T, Container>& c, Pred pred) ->
 
 namespace std {
 ///////////////////////// specialization /////////////////////////
-template <typename Key, typename T, typename Container>
-inline void swap(ginshio::stl::multimap<Key, T, Container>& lhs,
-                 ginshio::stl::multimap<Key, T, Container>& rhs) {
+template <typename Key, typename T,
+          typename Compare, typename Allocator, typename Container>
+inline void swap(
+    ::ginshio::stl::multimap<Key, T, Compare, Allocator, Container>& lhs,
+    ::ginshio::stl::multimap<Key, T, Compare, Allocator, Container>& rhs) {
   lhs.swap(rhs);
 }
 
-template <typename Key, typename T, typename Container, typename Pred>
-auto erase_if(ginshio::stl::multimap<Key, T, Container>& c, Pred pred) ->
-    typename ginshio::stl::multimap<Key, T, Container>::size_type {
-  return ginshio::stl::erase_if(c.get_container(), pred);
+template <typename Key, typename T, typename Compare,
+          typename Allocator, typename Container, typename Pred>
+auto erase_if(
+    ::ginshio::stl::multimap<Key, T, Compare, Allocator, Container>& c,
+    Pred pred) ->
+    typename ::ginshio::stl::multimap<Key, T, Compare,
+                                      Allocator, Container>::size_type {
+  return ::ginshio::stl::erase_if(c.get_container(), pred);
 }
 }  // namespace std
 

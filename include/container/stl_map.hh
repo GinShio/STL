@@ -27,21 +27,27 @@
 #ifndef GINSHIO_STL__CONTAINER_STL_MAP_HH_
 #define GINSHIO_STL__CONTAINER_STL_MAP_HH_ 1
 
-#include "container/stl_multimap.hh"
-
 namespace ginshio {
 namespace stl {
 
+template <typename Key, typename T,
+          typename Compare, typename Allocator, typename Container>
+class multimap;
+
 ///////////////////////// map /////////////////////////
 template <typename Key, typename T,
-          class Container =
-              ginshio::stl::rb_tree<tree::associative_pair<const Key, T>>>
+          typename Compare = ::std::less<Key>,
+          typename Allocator = ::std::allocator<::std::pair<const Key, T>>,
+          typename Container = ::ginshio::stl::rb_tree<
+            ::std::pair<const Key, T>, Compare,
+            ::ginshio::stl::tree::_KeyOfValue<::std::pair<const Key, T>>,
+            Allocator>>
 class map {
   /////////////// private type ///////////////
  private:
   template <typename _Alloc>
-  using _UseAlloc = typename std::enable_if<
-      std::uses_allocator<Container, _Alloc>::value>::type*;
+  using _UseAlloc = typename ::std::enable_if<
+      ::std::uses_allocator<Container, _Alloc>::value>::type;
   /////////////// member type ///////////////
  public:
   using key_type = Key;
@@ -51,6 +57,8 @@ class map {
   using allocator_type = typename Container::allocator_type;
   using size_type = typename Container::size_type;
   using difference_type = typename Container::difference_type;
+  using key_of_value = typename Container::key_of_value;
+  using key_compare = typename Container::key_compare;
   using reference = typename Container::reference;
   using const_reference = typename Container::const_reference;
   using pointer = typename Container::pointer;
@@ -59,7 +67,8 @@ class map {
   using const_iterator = typename Container::const_iterator;
   using reverse_iterator = typename Container::reverse_iterator;
   using const_reverse_iterator = typename Container::const_reverse_iterator;
-  // TODO: node_type && insert_return_type
+  using node_type = typename Container::node_type;
+  // TODO: insert_return_type
 
   /////////////// data member ///////////////
  protected:
@@ -70,18 +79,16 @@ class map {
   map() = default;
   explicit map(const allocator_type& alloc) : c(alloc) {}
   template <typename InputIt,
-            typename = typename std::enable_if<
-                std::is_base_of<std::input_iterator_tag,
-                                typename std::iterator_traits<
-                                    InputIt>::iterator_category>::value>::type*>
+            typename = typename ::std::enable_if<
+              ::ginshio::stl::is_input_iterator<InputIt>::value>::type>
   map(InputIt first, InputIt last,
       const allocator_type& alloc = allocator_type()) : c(first, last, alloc) {}
   map(const map& other) : c(other.c) {}
   map(const map& other, const allocator_type& alloc) : c(other.c, alloc) {}
   map(map&& other) noexcept = default;
   map(map&& other, const allocator_type& alloc)
-      : c(std::move(other.c), alloc) {}
-  map(std::initializer_list<value_type> ilist,
+      : c(::std::move(other.c), alloc) {}
+  map(::std::initializer_list<value_type> ilist,
       const allocator_type& alloc = allocator_type()) : c(alloc) {
     for (auto& _val : ilist) {
       c.emplace_unique(_val);
@@ -95,10 +102,8 @@ class map {
   /////////////// member function ///////////////
  public:
   template <typename InputIt,
-            typename = typename std::enable_if<
-              std::is_base_of<std::input_iterator_tag,
-                              typename std::iterator_traits<
-                                InputIt>::iterator_category>::value>::type*>
+            typename = typename ::std::enable_if<
+              ::ginshio::stl::is_input_iterator<InputIt>::value>::type>
   void assign(InputIt first, InputIt last) {
     c.assign_unique(first, last);
   }
@@ -106,28 +111,30 @@ class map {
     c.assign_unique(ilist);
   }
   template <typename Tree,
-            typename = typename std::enable_if<
-                std::is_base_of<
-                    __container_base::_TreeBase<value_type, allocator_type>,
-                    Tree>::value>::type*>
-  map& operator=(const multimap<key_type, mapped_type, Tree>& other) {
+            typename = typename ::std::enable_if<::std::is_base_of<
+              __container_base::_TreeBase<
+                value_type, key_compare, key_of_value, allocator_type>,
+              Tree>::value>::type>
+  map& operator=(const multimap<key_type, mapped_type,
+                 key_compare, allocator_type, Tree>& other) {
     c.assign_unique_copy_allocator(other.c);
     return *this;
   }
   template <typename Tree,
-            typename = typename std::enable_if<
-                std::is_base_of<
-                    __container_base::_TreeBase<value_type, allocator_type>,
-                    Tree>::value>::type*>
-  map& operator=(const map<key_type, mapped_type, Tree>& other) {
-    c.assign_equal_copy_allocator(other.c);
+            typename = typename ::std::enable_if<::std::is_base_of<
+              __container_base::_TreeBase<
+                value_type, key_compare, key_of_value, allocator_type>,
+              Tree>::value>::type>
+  map& operator=(const map<key_type, mapped_type,
+                 key_compare, allocator_type, Tree>& other) {
+    c.assign_unique_copy_allocator(other.c);
     return *this;
   }
   map& operator=(map&& other) {
-    c.assign_equal_move_allocator(std::move(other.c));
+    c.assign_unique_move_allocator(::std::move(other.c));
     return *this;
   }
-  map& operator=(std::initializer_list<value_type> ilist) {
+  map& operator=(::std::initializer_list<value_type> ilist) {
     c.assign_unique(ilist);
     return *this;
   }
@@ -140,18 +147,18 @@ class map {
  public:
   mapped_type& at(const key_type& key) {
     iterator _pos = this->find(key);
-    ginshio::stl::__check_out_of_range("map::at", _pos, this->end());
+    ::ginshio::stl::__check_out_of_range("map::at", _pos, this->end());
     return _pos->second;
   }
   const mapped_type& at(const key_type& key) const {
     const_iterator _pos = this->find(key);
-    ginshio::stl::__check_out_of_range("map::at", _pos, this->cend());
+    ::ginshio::stl::__check_out_of_range("map::at", _pos, this->cend());
     return _pos->second;
   }
   mapped_type& operator[](const key_type& key) {
     iterator _pos = this->find(key);
     if (_pos == this->end()) {
-      return this->insert(tree::make_pair(key, mapped_type())).first->second;
+      return this->insert(::std::make_pair(key, mapped_type())).first->second;
     } else {
       return _pos->second;
     }
@@ -159,8 +166,8 @@ class map {
   mapped_type& operator[](key_type&& key) {
     iterator _pos = this->find(key);
     if (_pos == this->end()) {
-      return this->insert(
-          tree::make_pair(std::forward(key), mapped_type())).first->second;
+      return this->insert(::std::make_pair(::std::forward<key_type>(key),
+                                           mapped_type())).first->second;
     } else {
       return _pos->second;
     }
@@ -196,56 +203,56 @@ class map {
   /////////////// modifier function ///////////////
  public:
   void clear() noexcept { c.clear(); }
-  std::pair<iterator, bool> insert(const value_type& value) {
+  ::std::pair<iterator, bool> insert(const value_type& value) {
     return c.emplace_unique(value);
   }
-  std::pair<iterator, bool> insert(value_type&& value) {
-    return c.emplace_unique(std::forward(value));
+  ::std::pair<iterator, bool> insert(value_type&& value) {
+    return c.emplace_unique(::std::forward<value_type>(value));
   }
   template <typename P>
-  std::pair<iterator, bool> insert(P&& value) {
-    return c.emplace_unique(std::forward<P>(value));
+  ::std::pair<iterator, bool> insert(P&& value) {
+    return c.emplace_unique(::std::forward<P>(value));
   }
   iterator insert(const_iterator hint, const value_type& value) {
     return c.emplace_hint_unique(hint, value).first;
   }
   iterator insert(const_iterator hint, value_type&& value) {
-    return c.emplace_hint_unique(hint, std::forward(value)).first;
+    return c.emplace_hint_unique(hint, ::std::forward<value_type>(value)).first;
   }
   template <typename P>
   iterator insert(const_iterator hint, P&& value) {
-    return c.emplace_hint_unique(hint, std::forward<P>(value)).first;
+    return c.emplace_hint_unique(hint, ::std::forward<P>(value)).first;
   }
-  template <typename InputIt>
+  template <typename InputIt,
+            typename = typename ::std::enable_if<
+              ::ginshio::stl::is_input_iterator<InputIt>::value>::type>
   void insert(InputIt first, InputIt last) {
-    while (first != last) {
-      c.emplace_unique(*first);
-    }
+    c.insert_unique(first, last);
   }
-  void insert(std::initializer_list<value_type> ilist) {
+  void insert(::std::initializer_list<value_type> ilist) {
     for (auto& value : ilist) {
-      c.emplace_unique(std::forward(value));
+      c.emplace_unique(value);
     }
   }
   // TODO: insert_return_type insert(node_type&& nh);
   // TODO: iterator insert(const_iterator hint, node_type&& nh);
   template <typename M>
-  std::pair<iterator, bool> insert_or_assign(const key_type& key, M&& obj) {
+  ::std::pair<iterator, bool> insert_or_assign(const key_type& key, M&& obj) {
     iterator _pos = this->find(key);
     if (_pos == this->end()) {
-      return {c.emplace_equal(key, std::forward<M>(obj)), true};
+      return {c.emplace_equal(key, ::std::forward<M>(obj)), true};
     } else {
-      _pos->second = std::forward<M>(obj);
+      _pos->second = ::std::forward<M>(obj);
       return {_pos, false};
     }
   }
   template <typename M>
-  std::pair<iterator, bool> insert_or_assign(key_type&& key, M&& obj) {
+  ::std::pair<iterator, bool> insert_or_assign(key_type&& key, M&& obj) {
     iterator _pos = this->find(key);
     if (_pos == this->end()) {
-      return {c.emplace_equal(std::move(key), std::forward<M>(obj)), true};
+      return {c.emplace_equal(::std::move(key), ::std::forward<M>(obj)), true};
     } else {
-      _pos->second = std::forward<M>(obj);
+      _pos->second = ::std::forward<M>(obj);
       return {_pos, false};
     }
   }
@@ -253,9 +260,9 @@ class map {
   iterator insert_or_assign(const_iterator hint, const key_type& key, M&& obj) {
     iterator _pos = this->find(key);
     if (_pos == this->end()) {
-      return c.emplace_hint_equal(hint, key, std::forward<M>(obj));
+      return c.emplace_hint_equal(hint, key, ::std::forward<M>(obj));
     } else {
-      _pos->second = std::forward<M>(obj);
+      _pos->second = ::std::forward<M>(obj);
       return _pos;
     }
   }
@@ -263,35 +270,35 @@ class map {
   iterator insert_or_assign(const_iterator hint, key_type&& key, M&& obj) {
     iterator _pos = this->find(key);
     if (_pos == this->end()) {
-      return c.emplace_hint_equal(hint, std::move(key), std::forward<M>(obj));
+      return c.emplace_hint_equal(hint, ::std::move(key),
+                                  ::std::forward<M>(obj));
     } else {
-      _pos->second = std::forward<M>(obj);
+      _pos->second = ::std::forward<M>(obj);
       return _pos;
     }
   }
   template <typename... Args>
-  std::pair<iterator, bool> emplace(Args&&... args) {
-    return c.emplace_unique(std::forward<Args>(args)...);
+  ::std::pair<iterator, bool> emplace(Args&&... args) {
+    return c.emplace_unique(::std::forward<Args>(args)...);
   }
   template <typename... Args>
   iterator emplace_hint(const_iterator hint, Args&&... args) {
-    return c.emplace_hint_unique(hint, std::forward<Args>(args)...).first;
+    return c.emplace_hint_unique(hint, ::std::forward<Args>(args)...).first;
   }
   template <typename... Args>
-  std::pair<iterator, bool> try_emplace(const key_type& key, Args&&... args) {
+  ::std::pair<iterator, bool> try_emplace(const key_type& key, Args&&... args) {
     iterator _pos = this->find(key);
     if (_pos == this->end()) {
-      return {c.emplace_equal(key, std::forward<Args>(args)...), true};
+      return {c.emplace_equal(key, ::std::forward<Args>(args)...), true};
     }
     return {_pos, false};
   }
   template <typename... Args>
-  std::pair<iterator, bool> try_emplace(key_type&& key, Args&&... args) {
+  ::std::pair<iterator, bool> try_emplace(key_type&& key, Args&&... args) {
     iterator _pos = this->find(key);
     if (_pos == this->end()) {
-      return {c.emplace_equal(std::forward<key_type>(key),
-                              std::forward<Args>(args)...),
-              true};
+      return {c.emplace_equal(::std::forward<key_type>(key),
+                              ::std::forward<Args>(args)...), true};
     }
     return {_pos, false};
   }
@@ -300,7 +307,7 @@ class map {
                        Args&&... args) {
     iterator _pos = this->find(key);
     if (_pos == this->end()) {
-      return c.emplace_hint_equal(hint, key, std::forward<Args>(args)...);
+      return c.emplace_hint_equal(hint, key, ::std::forward<Args>(args)...);
     }
     return _pos;
   }
@@ -308,8 +315,8 @@ class map {
   iterator try_emplace(const_iterator hint, key_type&& key, Args&&... args) {
     iterator _pos = this->find(key);
     if (_pos == this->end()) {
-      return c.emplace_hint_equal(hint, std::move(key),
-                                  std::forward<Args>(args)...);
+      return c.emplace_hint_equal(hint, ::std::move(key),
+                                  ::std::forward<Args>(args)...);
     }
     return _pos;
   }
@@ -318,55 +325,90 @@ class map {
     return c.erase(first, last);
   }
   size_type erase(const key_type& key) { return c.erase(key); }
-  // TODO: extract
+  node_type extract(const_iterator pos) { return c.extract(pos); }
+  node_type extract(const key_type& key) { return c.extract(key); }
   void swap(map& other) { c.swap(other.c); }
-  template <typename Tree, typename Alloc,
-            typename = typename std::enable_if<
-                std::is_base_of<
-                    __container_base::_TreeBase<value_type, Alloc>,
-                    Tree>::value &&
-                !std::is_same<Tree, Container>::value>::type*>
-  void merge(const map<key_type, mapped_type, Tree>& other) {
+  template <typename Tree,
+            typename = typename ::std::enable_if<
+              ::std::is_base_of<
+                __container_base::_TreeBase<
+                  value_type, key_compare, key_of_value, allocator_type>,
+                Tree>::value &&
+              !std::is_same<Tree, Container>::value>::type>
+  void merge(const map<key_type, mapped_type,
+             key_compare, allocator_type, Tree>& other) {
     c.merge_unique(other.c);
   }
-  void merge(map& other) { c.merge_unique(std::move(other.c)); }
-  void merge(map&& other) { c.merge_unique(std::move(other.c)); }
-  template <typename Tree, typename Alloc,
-            typename = typename std::enable_if<
-                std::is_base_of<
-                    __container_base::_TreeBase<value_type, Alloc>,
-                    Tree>::value &&
-                !std::is_same<Tree, Container>::value>::type*>
-  void merge(const multimap<key_type, mapped_type, Tree>& other) {
+  void merge(map& other) { c.merge_unique(::std::move(other.c)); }
+  void merge(map&& other) { c.merge_unique(::std::move(other.c)); }
+  template <typename Tree,
+            typename = typename ::std::enable_if<
+              ::std::is_base_of<
+                __container_base::_TreeBase<
+                  value_type, key_compare, key_of_value, allocator_type>,
+                Tree>::value &&
+              !std::is_same<Tree, Container>::value>::type>
+  void merge(const multimap<key_type, mapped_type,
+             key_compare, allocator_type, Tree>& other) {
     c.merge_unique(other.c);
   }
-  void merge(multimap<key_type, mapped_type, container_type>& other) {
-    c.merge_unique(std::move(other.c));
+  void merge(multimap<key_type, mapped_type,
+             key_compare, allocator_type, container_type>& other) {
+    c.merge_unique(::std::move(other.c));
   }
-  void merge(multimap<key_type, mapped_type, container_type>&& other) {
-    c.merge_unique(std::move(other.c));
+  void merge(multimap<key_type, mapped_type,
+             key_compare, allocator_type, container_type>&& other) {
+    c.merge_unique(::std::move(other.c));
   }
 
   /////////////// find ///////////////
-  /////////////// TODO: template overload K in C++14 ///////////////
  public:
   size_type count(const key_type& key) const { return c.count(key); }
+  template <typename K>
+  size_type count(const K& key) const { return c.count(key); }
   iterator find(const key_type& key) { return c.find(key); }
   const_iterator find(const key_type& key) const { return c.find(key); }
+  template <typename K>
+  iterator find(const K& key) { return c.find(key); }
+  template <typename K>
+  const_iterator find(const K& key) const { return c.find(key); }
   bool contains(const key_type& key) const { return c.find(key) != c.end(); }
-  std::pair<iterator, iterator> equal_range(const key_type& key) {
+  template <typename K>
+  bool contains(const K& key) const { return c.find(key) != c.end(); }
+  ::std::pair<iterator, iterator> equal_range(const key_type& key) {
     return c.equal_range(key);
   }
   auto equal_range(const key_type& key) const
-      -> std::pair<const_iterator, const_iterator> {
+      -> ::std::pair<const_iterator, const_iterator> {
+    return c.equal_range(key);
+  }
+  template <typename K>
+  ::std::pair<iterator, iterator> equal_range(const K& key) {
+    return c.equal_range(key);
+  }
+  template <typename K>
+  auto equal_range(const K& key) const
+      -> ::std::pair<const_iterator, const_iterator> {
     return c.equal_range(key);
   }
   iterator lower_bound(const key_type& key) { return c.lower_bound(key); }
   const_iterator lower_bound(const key_type& key) const {
     return c.lower_bound(key);
   }
+  template <typename K>
+  iterator lower_bound(const K& key) { return c.lower_bound(key); }
+  template <typename K>
+  const_iterator lower_bound(const K& key) const {
+    return c.lower_bound(key);
+  }
   iterator upper_bound(const key_type& key) { return c.upper_bound(key); }
   const_iterator upper_bound(const key_type& key) const {
+    return c.upper_bound(key);
+  }
+  template <typename K>
+  iterator upper_bound(const K& key) { return c.upper_bound(key); }
+  template <typename K>
+  const_iterator upper_bound(const K& key) const {
     return c.upper_bound(key);
   }
 };
@@ -382,48 +424,63 @@ using MapConstIterator = typename map<Key, T>::const_iterator;
 
 
 ///////////////////////// map comparison operators /////////////////////////
-template <typename Key, typename T, typename Container>
-constexpr bool operator==(const map<Key, T, Container>& lhs,
-                          const map<Key, T, Container>& rhs) {
+template <typename Key, typename T,
+          typename Compare, typename Allocator, typename Container>
+constexpr bool operator==(
+    const map<Key, T, Compare, Allocator, Container>& lhs,
+    const map<Key, T, Compare, Allocator, Container>& rhs) {
   return lhs.get_container() == rhs.get_container();
 }
-template <typename Key, typename T, typename Container>
-constexpr bool operator!=(const map<Key, T, Container>& lhs,
-                          const map<Key, T, Container>& rhs) {
+template <typename Key, typename T,
+          typename Compare, typename Allocator, typename Container>
+constexpr bool operator!=(
+    const map<Key, T, Compare, Allocator, Container>& lhs,
+    const map<Key, T, Compare, Allocator, Container>& rhs) {
   return lhs.get_container() != rhs.get_container();
 }
-template <typename Key, typename T, typename Container>
-constexpr bool operator<(const map<Key, T, Container>& lhs,
-                         const map<Key, T, Container>& rhs) {
+template <typename Key, typename T,
+          typename Compare, typename Allocator, typename Container>
+constexpr bool operator<(
+    const map<Key, T, Compare, Allocator, Container>& lhs,
+    const map<Key, T, Compare, Allocator, Container>& rhs) {
   return lhs.get_container() < rhs.get_container();
 }
-template <typename Key, typename T, typename Container>
-constexpr bool operator>(const map<Key, T, Container>& lhs,
-                         const map<Key, T, Container>& rhs) {
+template <typename Key, typename T,
+          typename Compare, typename Allocator, typename Container>
+constexpr bool operator>(
+    const map<Key, T, Compare, Allocator, Container>& lhs,
+    const map<Key, T, Compare, Allocator, Container>& rhs) {
   return lhs.get_container() > rhs.get_container();
 }
-template <typename Key, typename T, typename Container>
-constexpr bool operator<=(const map<Key, T, Container>& lhs,
-                          const map<Key, T, Container>& rhs) {
+template <typename Key, typename T,
+          typename Compare, typename Allocator, typename Container>
+constexpr bool operator<=(
+    const map<Key, T, Compare, Allocator, Container>& lhs,
+    const map<Key, T, Compare, Allocator, Container>& rhs) {
   return !(rhs.get_container() < lhs.get_container());
 }
-template <typename Key, typename T, typename Container>
-constexpr bool operator>=(const map<Key, T, Container>& lhs,
-                          const map<Key, T, Container>& rhs) {
+template <typename Key, typename T,
+          typename Compare, typename Allocator, typename Container>
+constexpr bool operator>=(
+    const map<Key, T, Compare, Allocator, Container>& lhs,
+    const map<Key, T, Compare, Allocator, Container>& rhs) {
   return !(lhs.get_container() < rhs.get_container());
 }
 
 
 
 ///////////////////////// specialization /////////////////////////
-template <typename Key, typename T, typename Container>
-inline void swap(map<Key, T, Container>& lhs, map<Key, T, Container>& rhs) {
+template <typename Key, typename T,
+          typename Compare, typename Allocator, typename Container>
+inline void swap(map<Key, T, Compare, Allocator, Container>& lhs,
+                 map<Key, T, Compare, Allocator, Container>& rhs) {
   lhs.swap(rhs);
 }
 
-template <typename Key, typename T, typename Container, typename Pred>
-auto erase_if(map<Key, T, Container>& c, Pred pred) ->
-    typename map<Key, T, Container>::size_type {
+template <typename Key, typename T, typename Compare,
+          typename Allocator, typename Container, typename Pred>
+auto erase_if(map<Key, T, Compare, Allocator, Container>& c, Pred pred) ->
+    typename map<Key, T, Compare, Allocator, Container>::size_type {
   return erase_if(c.get_container(), pred);
 }
 
@@ -436,16 +493,22 @@ auto erase_if(map<Key, T, Container>& c, Pred pred) ->
 
 namespace std {
 ///////////////////////// specialization /////////////////////////
-template <typename Key, typename T, typename Container>
-inline void swap(ginshio::stl::map<Key, T, Container>& lhs,
-                 ginshio::stl::map<Key, T, Container>& rhs) {
+template <typename Key, typename T,
+          typename Compare, typename Allocator, typename Container>
+inline void swap(
+    ::ginshio::stl::map<Key, T, Compare, Allocator, Container>& lhs,
+    ::ginshio::stl::map<Key, T, Compare, Allocator, Container>& rhs) {
   lhs.swap(rhs);
 }
 
-template <typename Key, typename T, typename Container, typename Pred>
-auto erase_if(ginshio::stl::map<Key, T, Container>& c, Pred pred) ->
-    typename ginshio::stl::map<Key, T, Container>::size_type {
-  return ginshio::stl::erase_if(c.get_container(), pred);
+template <typename Key, typename T, typename Compare,
+          typename Allocator, typename Container, typename Pred>
+auto erase_if(
+    ::ginshio::stl::map<Key, T, Compare, Allocator, Container>& c,
+    Pred pred) ->
+    typename ::ginshio::stl::map<Key, T, Compare,
+                                 Allocator, Container>::size_type {
+  return ::ginshio::stl::erase_if(c.get_container(), pred);
 }
 }  // namespace std
 

@@ -28,7 +28,9 @@
 #define GINSHIO_STL__RB_TREE_HPP_ 1
 
 #include "base/stl_init.hh"
+#include "base/stl_iterator_traits.hh"
 #include "base/stl_tree_algo.hh"
+#include "container/stl_tree_base.hh"
 
 #include <cstddef>
 #include <cstdlib>

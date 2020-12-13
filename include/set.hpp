@@ -27,15 +27,18 @@
 #ifndef GINSHIO_STL__SET_HPP_
 #define GINSHIO_STL__SET_HPP_ 1
 
+#include "base/stl_check.hh"
+#include "base/stl_iterator_traits.hh"
 #include "base/stl_tree_algo.hh"
 #include "rb_tree.hpp"
 
+#include <functional>
 #include <initializer_list>
 #include <memory>
 #include <type_traits>
 #include <utility>
 
-#include "container/stl_multiset.hh"
 #include "container/stl_set.hh"
+#include "container/stl_multiset.hh"
 
 #endif  // GINSHIO_STL__SET_HPP_

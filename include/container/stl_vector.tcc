@@ -41,11 +41,11 @@ auto vector<T, Allocator>::operator=(vector<T, Allocator>&& other) ->
   if (_AllocatorTraits::propagate_on_container_move_assignment::value) {
     _Base::__put(_impl);
     _impl.__swap(other._impl);
-    static_cast<allocator_type&>(_impl) = std::move(
-          static_cast<typename decltype(other)::allocator_type&>(other._impl));
+    static_cast<allocator_type&>(_impl) = ::std::move(
+          static_cast<vector<T, Allocator>::allocator_type&>(other._impl));
   } else {
     vector::__insert_range(_impl, const_iterator(_impl._begin), other.begin(),
-                           other.end(), other.size(), std::false_type());
+                           other.end(), other.size(), ::std::false_type());
   }
   return *this;
 }
@@ -55,24 +55,23 @@ auto vector<T, Allocator>::insert(const_iterator pos, size_type count,
                                   const value_type& value) -> iterator {
   const size_type _dist = static_cast<size_type>(pos - this->cbegin());
   if (this->capacity() - this->size() < count) {
-    ginshio::stl::uninitialized_fill_n(
+    ::ginshio::stl::uninitialized_fill_n(
         vector::__reallocate(_impl, _dist, count), count, value);
   } else if (count != 0) {
     const_iterator _old_end = _impl._end;
     size_type _back_elm_num = static_cast<size_type>(this->cend() - pos);
     if (_back_elm_num <= count) {
-      _impl._end = ginshio::stl::uninitialized_move(
-          pos, _old_end,
-          ginshio::stl::uninitialized_fill_n(_impl._end, count - _back_elm_num,
-                                             value));
+      _impl._end = ::ginshio::stl::uninitialized_move(
+          pos, _old_end, ::ginshio::stl::uninitialized_fill_n(
+              _impl._end, count - _back_elm_num, value));
       count = _back_elm_num;
     } else {
-      _impl._end = ginshio::stl::uninitialized_move(_old_end - count, _old_end,
-                                                    _impl._end);
-      _old_end = ginshio::stl::move_backward(pos, _old_end - count,
-                                             const_cast<iterator>(_old_end));
+      _impl._end = ::ginshio::stl::uninitialized_move(
+          _old_end - count, _old_end, _impl._end);
+      _old_end = ::ginshio::stl::move_backward(pos, _old_end - count,
+                                               const_cast<iterator>(_old_end));
     }
-    ginshio::stl::fill_n(const_cast<iterator>(pos), count, value);
+    ::ginshio::stl::fill_n(const_cast<iterator>(pos), count, value);
   }
   return _impl._begin + _dist;
 }
@@ -83,16 +82,16 @@ auto vector<T, Allocator>::emplace(const_iterator pos, const T& value)
   const size_type _dist = static_cast<size_type>(pos - this->cbegin());
   if (_impl._end == _impl._finish) {
     value_type tmp = value;
-    ginshio::stl::construct(vector::__reallocate(_impl, _dist, 1),
-                            std::move(tmp));
+    ::ginshio::stl::construct(vector::__reallocate(_impl, _dist, 1),
+                              ::std::move(tmp));
   } else if (pos == this->cend()) {
-    ginshio::stl::construct(_impl._end++, value);
+    ::ginshio::stl::construct(_impl._end++, value);
   } else {
     value_type tmp = value;
-    ginshio::stl::construct(_impl._end, std::move(*(_impl._end - 1)));
-    ginshio::stl::move_backward(const_cast<iterator>(pos), _impl._end - 1,
-                                _impl._end);
-    *const_cast<iterator>(pos) = std::move(tmp);
+    ::ginshio::stl::construct(_impl._end, ::std::move(*(_impl._end - 1)));
+    ::ginshio::stl::move_backward(const_cast<iterator>(pos),
+                                  _impl._end - 1, _impl._end);
+    *const_cast<iterator>(pos) = ::std::move(tmp);
     ++_impl._end;
   }
   return _impl._begin + _dist;
@@ -104,16 +103,16 @@ auto vector<T, Allocator>::emplace(const_iterator pos, Args&&... args)
     -> iterator {
   const size_type _dist = static_cast<size_type>(pos - this->cbegin());
   if (_impl._end == _impl._finish) {
-    ginshio::stl::construct(vector::__reallocate(_impl, _dist, 1),
-                            std::forward<Args>(args)...);
+    ::ginshio::stl::construct(vector::__reallocate(_impl, _dist, 1),
+                              ::std::forward<Args>(args)...);
   } else if (pos == this->cend()) {
-    ginshio::stl::construct(_impl._end++, std::forward<Args>(args)...);
+    ::ginshio::stl::construct(_impl._end++, std::forward<Args>(args)...);
   } else {
-    ginshio::stl::construct(_impl._end, std::move(*(_impl._end - 1)));
-    ginshio::stl::move_backward(const_cast<iterator>(pos), _impl._end - 1,
-                                _impl._end);
-    ginshio::stl::construct(const_cast<iterator>(pos),
-                            std::forward<Args>(args)...);
+    ::ginshio::stl::construct(_impl._end, ::std::move(*(_impl._end - 1)));
+    ::ginshio::stl::move_backward(const_cast<iterator>(pos),
+                                  _impl._end - 1, _impl._end);
+    ::ginshio::stl::construct(const_cast<iterator>(pos),
+                              ::std::forward<Args>(args)...);
     ++_impl._end;
   }
   return _impl._begin + _dist;
@@ -121,16 +120,15 @@ auto vector<T, Allocator>::emplace(const_iterator pos, Args&&... args)
 
 template <typename T, typename Allocator>
 template <typename _InputIt>
-void vector<T, Allocator>::__assign_range_dispatch(_InputIt _first,
-                                                   _InputIt _last,
-                                                   std::input_iterator_tag) {
+void vector<T, Allocator>::__assign_range_dispatch(
+    _InputIt _first, _InputIt _last, ::std::input_iterator_tag) {
   iterator _cur = _impl._begin;
-  for (size_type _n = 0, _sz = this->size(); _n < _sz && _first != _last;) {
+  for (size_type _sz = this->size(); _sz > 0 && _first != _last; --_sz) {
     *_cur = *_first;
     ++_first, ++_cur;
   }
   if (_first == _last) {
-    ginshio::stl::destroy(_cur, _impl._end);
+    ::ginshio::stl::destroy(_cur, _impl._end);
     _impl._end = _cur;
     return;
   }
@@ -237,25 +235,25 @@ auto vector<T, Allocator>::__reallocate(_BaseImpl& _impl,
                                         const size_type& _len) -> iterator {
   const size_type _need = _impl._end - _impl._begin + _len;
   const size_type _cap2 = (_impl._finish - _impl._begin) << 1;
-  _BaseImpl _old{_impl};
-  _Base::__get(_need > _cap2 ? _need : _cap2, _impl);
-  if (static_cast<size_type>(_old._end - _old._begin) == _dist) {
-    ginshio::stl::uninitialized_move(_old._begin, _old._end, _impl._begin);
-    _impl._end = _impl._begin + _need;
+  _BaseImpl _new{static_cast<allocator_type>(_impl)};
+  _Base::__get(_need > _cap2 ? _need : _cap2, _new);
+  if (static_cast<size_type>(_impl._end - _impl._begin) == _dist) {
+    ::ginshio::stl::uninitialized_move_n(_impl._begin, _dist, _new._begin);
+    _new._end = _new._begin + _need;
   } else {
-    ginshio::stl::uninitialized_move_n(_old._begin, _dist, _impl._begin);
-    _impl._end = ginshio::stl::uninitialized_move(
-        _old._begin + _dist, _old._end, _impl._begin + _dist + _len);
+    ::ginshio::stl::uninitialized_move_n(_impl._begin, _dist, _new._begin);
+    _new._end = ::ginshio::stl::uninitialized_move(
+        _impl._begin + _dist, _impl._end, _new._begin + _dist + _len);
   }
-  ginshio::stl::destroy(_old._begin, _old._end);
-  _Base::__put(_old);
+  _Base::__put(_impl);
+  _impl.__swap(_new);
   return _impl._begin + _dist;
 }
 
 template <typename T, typename Allocator>
 template <typename _InputIt>
 void vector<T, Allocator>::__range_init(_InputIt _first, _InputIt _last,
-                                        std::input_iterator_tag) {
+                                        ::std::input_iterator_tag) {
   try {
     for (; _first != _last; ++_first) {
       this->emplace_back(*_first);

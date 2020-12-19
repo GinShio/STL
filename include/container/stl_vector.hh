@@ -101,7 +101,7 @@ struct _VectorBase {
     _impl._begin = _impl._end = _impl._finish = nullptr;
   }
   static void __swap_allocator(_AllocatorType& _a, _AllocatorType& _b) {
-    std::swap(_a, _b);
+    ::std::swap(_a, _b);
   }
   static constexpr ::std::size_t __max_size() noexcept {
     return static_cast<::std::size_t>(

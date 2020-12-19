@@ -29,7 +29,6 @@
 
 #include "base/stl_check.hh"
 #include "base/stl_iterator_traits.hh"
-#include "base/stl_tree_algo.hh"
 #include "rb_tree.hpp"
 
 #include <functional>

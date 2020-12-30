@@ -29,6 +29,7 @@
 
 #include "base/stl_check.hh"
 #include "base/stl_init.hh"
+#include "base/stl_iterator_traits.hh"
 
 #include <algorithm>
 #include <cstddef>

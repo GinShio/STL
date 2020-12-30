@@ -214,9 +214,9 @@ void list<T, Allocator>::sort() {
   int _end = 0;
   try {
     for (int _cur = 0; _impl._header._size != 0; _cur = 0) {
-      _transfer.splice(_transfer.begin(), std::move(*this), this->begin());
+      _transfer.splice(_transfer.begin(), ::std::move(*this), this->begin());
       for (; _cur < _end && !_pool[_cur].empty(); ++_cur) {
-        _pool[_cur].merge(std::move(_transfer));
+        _pool[_cur].merge(::std::move(_transfer));
         _transfer._impl.__swap(_pool[_cur]._impl);
       }
       _transfer._impl.__swap(_pool[_cur]._impl);
@@ -229,9 +229,9 @@ void list<T, Allocator>::sort() {
     }
     _impl.__swap(_pool[_end - 1]._impl);
   } catch (...) {
-    this->splice(this->begin(), std::move(_transfer));
+    this->splice(this->begin(), ::std::move(_transfer));
     for (int _cur = 0; _cur < _end; ++_cur) {
-      this->splice(this->begin(), std::move(_pool[_cur]));
+      this->splice(this->begin(), ::std::move(_pool[_cur]));
     }
     throw;
   }
@@ -248,9 +248,9 @@ void list<T, Allocator>::sort(Compare comp) {
   int _end = 0;
   try {
     for (int _cur = 0; _impl._header._size != 0; _cur = 0) {
-      _transfer.splice(_transfer.begin(), std::move(*this), this->begin());
+      _transfer.splice(_transfer.begin(), ::std::move(*this), this->begin());
       for (; _cur < _end && !_pool[_cur].empty(); ++_cur) {
-        _pool[_cur].merge(std::move(_transfer), comp);
+        _pool[_cur].merge(::std::move(_transfer), comp);
         _transfer._impl.__swap(_pool[_cur]._impl);
       }
       _transfer._impl.__swap(_pool[_cur]._impl);
@@ -259,13 +259,13 @@ void list<T, Allocator>::sort(Compare comp) {
       }
     }
     for (int _cur = 1; _cur < _end; ++_cur) {
-      _pool[_cur].merge(std::move(_pool[_cur - 1]), comp);
+      _pool[_cur].merge(::std::move(_pool[_cur - 1]), comp);
     }
     _impl.__swap(_pool[_end - 1]._impl);
   } catch (...) {
-    this->splice(this->begin(), std::move(_transfer));
+    this->splice(this->begin(), ::std::move(_transfer));
     for (int _cur = 0; _cur < _end; ++_cur) {
-      this->splice(this->begin(), std::move(_pool[_cur]));
+      this->splice(this->begin(), ::std::move(_pool[_cur]));
     }
     throw;
   }
@@ -275,7 +275,7 @@ template <typename T, typename Allocator>
 template <typename _InputIt>
 void list<T, Allocator>::
 __assign_range_dispatch(_InputIt _first, _InputIt _last,
-                        std::input_iterator_tag) {
+                        ::std::input_iterator_tag) {
   iterator _it = iterator(_impl._header._next);
   for (auto _end = const_iterator(static_cast<_NodeBase*>(&_impl._header));
        _first != _last && _it != _end; ++_first, ++_it) {
@@ -291,9 +291,9 @@ __assign_range_dispatch(_InputIt _first, _InputIt _last,
 template <typename T, typename Allocator>
 template <typename _RandomIt>
 void list<T, Allocator>::__assign_range_dispatch(
-    _RandomIt _first, _RandomIt _last, std::random_access_iterator_tag) {
+    _RandomIt _first, _RandomIt _last, ::std::random_access_iterator_tag) {
   iterator _it = iterator(_impl._header._next);
-  size_type _n = 0, _size = std::distance(_first, _last);
+  size_type _n = 0, _size = ::std::distance(_first, _last);
   for (; _n < _impl._header._size && _n < _size; ++_n) {
     *_it = *_first;
     ++_first, ++_it;
@@ -310,7 +310,7 @@ template <typename... Args>
 void list<T, Allocator>::__fill_n(_BaseImpl& _impl, const_iterator _next,
                                   const size_type& _count, Args&&... args) {
   for (size_type _n = 0; _n < _count; ++_n) {
-    _Base::__get(_impl, std::forward<Args>(args)...)->__hook(_next._node);
+    _Base::__get(_impl, ::std::forward<Args>(args)...)->__hook(_next._node);
     ++_impl._header._size;
   }
 }
@@ -319,7 +319,7 @@ template <typename T, typename Allocator>
 template <typename _InputIt>
 void list<T, Allocator>::__copy(_BaseImpl& _impl, const_iterator _next,
                                 _InputIt _first, _InputIt _last,
-                                std::input_iterator_tag) {
+                                ::std::input_iterator_tag) {
   for (; _first != _last; ++_first) {
     _Base::__get(_impl, *_first)->__hook(_next._node);
     ++_impl._header._size;

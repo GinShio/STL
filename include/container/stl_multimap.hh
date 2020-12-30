@@ -39,9 +39,7 @@ template <typename Key, typename T,
           typename Compare = ::std::less<Key>,
           typename Allocator = ::std::allocator<::std::pair<const Key, T>>,
           typename Container = ::ginshio::stl::rb_tree<
-            ::std::pair<const Key, T>, Compare,
-            ::ginshio::stl::tree::_KeyOfValue<::std::pair<const Key, T>>,
-            Allocator>>
+            ::std::pair<const Key, T>, Compare, Allocator>>
 class multimap {
   /////////////// private type ///////////////
  private:

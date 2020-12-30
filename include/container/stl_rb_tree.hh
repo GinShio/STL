@@ -33,14 +33,13 @@ namespace stl {
 ///////////////////////// red black tree /////////////////////////
 template <typename T,
           typename Compare = ::std::less<
-            decltype(::ginshio::stl::tree::_KeyOfValue<T>()(T()))>,
-          typename KeyOfValue = ::ginshio::stl::tree::_KeyOfValue<T>,
+            decltype(::ginshio::stl::_KeyOfValue<T>()(T()))>,
           typename Allocator = ::std::allocator<T>>
 class rb_tree
-    : public __container_base::_TreeBase<T, Compare, KeyOfValue, Allocator> {
+    : public __container_base::_TreeBase<T, Compare, Allocator> {
   /////////////// private type ///////////////
  private:
-  using _Base = __container_base::_TreeBase<T, Compare, KeyOfValue, Allocator>;
+  using _Base = __container_base::_TreeBase<T, Compare, Allocator>;
   using _BaseImpl = typename _Base::_TreeImpl;
   using _DataAllocTraits = typename _Base::_DataAllocTraits;
   using _NodeBase = typename _Base::_NodeBase;
@@ -56,6 +55,8 @@ class rb_tree
   using difference_type = typename _Base::_DifferenceType;
   using key_compare = typename _Base::_CompType;
   using key_of_value = typename _Base::_KOfVType;
+  using key_type =
+      decltype(::std::declval<key_of_value>()(::std::declval<value_type>()));
   using reference = typename _Base::_Reference;
   using const_reference = typename _Base::_ConstReference;
   using pointer = typename _DataAllocTraits::pointer;
@@ -323,8 +324,7 @@ class rb_tree
     _NodeType* _node =
         static_cast<_NodeType*>(_Base::__get(_impl, ::std::forward<Args>(args)...));
     try {
-      tree::__insert_equal(_node, _header, static_cast<key_compare>(_impl),
-                           static_cast<key_of_value>(_impl));
+      _Base::__insert_equal(_impl, _node);
     } catch (...) {
       _Base::__put(_impl, _node);
       throw;
@@ -341,9 +341,7 @@ class rb_tree
     _NodeType* _tmp = _node;
     bool _insert;
     try {
-      _insert =
-          tree::__insert_unique(_node, _header, static_cast<key_compare>(_impl),
-                                static_cast<key_of_value>(_impl));
+      _insert = _Base::__insert_unique(_impl, _node);
     } catch (...) {
       _Base::__put(_impl, _tmp);
       throw;
@@ -376,10 +374,8 @@ class rb_tree
         _Base::__get(_impl, ::std::forward<Args>(args)...));
     _NodeHeader* _header = &_impl._header;
     try {
-      tree::__insert_hint_equal(static_cast<_NodeType*>(hint._node),
-                                _node, &_impl._header,
-                                static_cast<key_compare>(_impl),
-                                static_cast<key_of_value>(_impl));
+      _Base::__insert_hint_equal(
+          _impl, static_cast<_NodeType*>(hint._node), _node);
     } catch (...) {
       _Base::__put(_impl, _node);
       throw;
@@ -397,10 +393,8 @@ class rb_tree
     _NodeBase* _tmp = _node;
     bool _insert;
     try {
-      _insert = tree::__insert_hint_unique(static_cast<_NodeType*>(hint._node),
-                                           _node, &_impl._header,
-                                           static_cast<key_compare>(_impl),
-                                           static_cast<key_of_value>(_impl));
+      _insert = _Base::__insert_hint_unique(
+          _impl, static_cast<_NodeType*>(hint._node), _node);
     } catch (...) {
       _Base::__put(_impl, static_cast<_NodeType*>(_tmp));
       throw;
@@ -414,11 +408,11 @@ class rb_tree
     return {iterator(_node), _insert};
   }
   iterator erase(const_iterator pos) {
-    iterator _ret = iterator(tree::__node_increment(pos._node));
+    _NodeBase* _ret = _NodeBase::__increment(pos._node);
     rb_tree::__erase_aux(pos._node, &_impl._header);
     _Base::__put(_impl, static_cast<_NodeType*>(pos._node));
     --_impl._header._size;
-    return _ret;
+    return iterator(_ret);
   }
   iterator erase(const_iterator first, const_iterator last) {
     _NodeHeader* _header = &_impl._header;
@@ -434,8 +428,7 @@ class rb_tree
   }
   template <typename Key,
             typename = typename ::std::enable_if<
-              ::std::is_convertible<Key, decltype(KeyOfValue()(value_type()))>::
-              value>::type>
+              ::std::is_convertible<Key, key_type>::value>::type>
   size_type erase(const Key& key) {
     ::std::pair<iterator, iterator> _pair = this->equal_range(key);
     const size_type _old = _impl._header._size;
@@ -451,8 +444,7 @@ class rb_tree
   }
   template <typename Key,
             typename = typename ::std::enable_if<
-              ::std::is_convertible<Key, decltype(KeyOfValue()(value_type()))>::
-              value>::type>
+              ::std::is_convertible<Key, key_type>::value>::type>
   node_type extract(const Key& key) {
     iterator _pos = this->find(key);
     if (_pos._node == static_cast<_NodeBase*>(&_impl._header)) {
@@ -475,9 +467,7 @@ class rb_tree
     for (typename Tree::size_type _n = other.size(); _n > 0; --_n) {
       _node = _Base::__get(_impl, *_it);
       try {
-        tree::__insert_equal(static_cast<_NodeType*>(_node), &_impl._header,
-                             static_cast<typename rb_tree::key_compare>(_impl),
-                             static_cast<typename rb_tree::key_of_value>(_impl));
+        _Base::__insert_equal(_impl, static_cast<_NodeType*>(_node));
       } catch (...) {
         _Base::__put(_impl, static_cast<_NodeType*>(_node));
         throw;
@@ -501,9 +491,7 @@ class rb_tree
           static_cast<_NodeBase*>(&other._impl._header));
       _node->_tag = _RBTreeColor_RED;
       try {
-        tree::__insert_equal(_node, static_cast<_NodeBase*>(&_impl._header),
-                             static_cast<typename rb_tree::key_compare>(_impl),
-                             static_cast<typename rb_tree::key_of_value>(_impl));
+        _Base::__insert_equal(_impl, _node);
       } catch (...) {
         // TODO
         throw;
@@ -527,10 +515,7 @@ class rb_tree
       _node = _Base::__get(_impl, *_it);
       _tmp = _node;
       try {
-        _insert = tree::__insert_unique(
-            static_cast<_NodeType*>(_node), &_impl._header,
-            static_cast<typename rb_tree::key_compare>(_impl),
-            static_cast<typename rb_tree::key_of_value>(_impl));
+        _insert = _Base::__insert_unique(_impl, static_cast<_NodeType*>(_node));
       } catch (...) {
         _Base::__put(_impl, static_cast<_NodeType*>(_tmp));
         throw;
@@ -560,9 +545,7 @@ class rb_tree
       _NodeHeader* _header = &_impl._header;
       _node->_tag = _RBTreeColor_RED;
       try {
-        _insert = tree::__insert_unique(
-            _node, _header, static_cast<typename rb_tree::key_compare>(_impl),
-            static_cast<typename rb_tree::key_of_value>(_impl));
+        _insert = _Base::__insert_unique(_impl, _node);
       } catch (...) {
         // TODO
         throw;
@@ -650,44 +633,38 @@ using RBTreeConstIterator =
 
 
 ///////////////////////// rb_tree comparison operators /////////////////////////
-template <typename T, typename Compare, typename KeyOfValue, typename Allocator>
-constexpr bool operator==(
-    const rb_tree<T, Compare, KeyOfValue, Allocator>& lhs,
-    const rb_tree<T, Compare, KeyOfValue, Allocator>& rhs) {
+template <typename T, typename Compare, typename Allocator>
+constexpr bool operator==(const rb_tree<T, Compare, Allocator>& lhs,
+                          const rb_tree<T, Compare, Allocator>& rhs) {
   return &lhs == &rhs || (lhs.size() == rhs.size() &&
                           ::std::equal(lhs.begin(), lhs.end(), rhs.begin()));
 }
-template <typename T, typename Compare, typename KeyOfValue, typename Allocator>
-constexpr bool operator!=(
-    const rb_tree<T, Compare, KeyOfValue, Allocator>& lhs,
-    const rb_tree<T, Compare, KeyOfValue, Allocator>& rhs) {
+template <typename T, typename Compare, typename Allocator>
+constexpr bool operator!=(const rb_tree<T, Compare, Allocator>& lhs,
+                          const rb_tree<T, Compare, Allocator>& rhs) {
   return &lhs != &rhs && (lhs.size() != rhs.size() ||
                           !::std::equal(lhs.begin(), lhs.end(), rhs.begin()));
 }
-template <typename T, typename Compare, typename KeyOfValue, typename Allocator>
-constexpr bool operator<(
-    const rb_tree<T, Compare, KeyOfValue, Allocator>& lhs,
-    const rb_tree<T, Compare, KeyOfValue, Allocator>& rhs) {
+template <typename T, typename Compare, typename Allocator>
+constexpr bool operator<(const rb_tree<T, Compare, Allocator>& lhs,
+                         const rb_tree<T, Compare, Allocator>& rhs) {
   return ::std::lexicographical_compare(lhs.begin(), lhs.end(),
                                         rhs.begin(), rhs.end());
 }
-template <typename T, typename Compare, typename KeyOfValue, typename Allocator>
-constexpr bool operator>(
-    const rb_tree<T, Compare, KeyOfValue, Allocator>& lhs,
-    const rb_tree<T, Compare, KeyOfValue, Allocator>& rhs) {
+template <typename T, typename Compare, typename Allocator>
+constexpr bool operator>(const rb_tree<T, Compare, Allocator>& lhs,
+                         const rb_tree<T, Compare, Allocator>& rhs) {
   return ::std::lexicographical_compare(rhs.begin(), rhs.end(),
                                         lhs.begin(), lhs.end());
 }
-template <typename T, typename Compare, typename KeyOfValue, typename Allocator>
-constexpr bool operator<=(
-    const rb_tree<T, Compare, KeyOfValue, Allocator>& lhs,
-    const rb_tree<T, Compare, KeyOfValue, Allocator>& rhs) {
+template <typename T, typename Compare, typename Allocator>
+constexpr bool operator<=(const rb_tree<T, Compare, Allocator>& lhs,
+                          const rb_tree<T, Compare, Allocator>& rhs) {
   return !operator<(rhs, lhs);
 }
-template <typename T, typename Compare, typename KeyOfValue, typename Allocator>
-constexpr bool operator>=(
-    const rb_tree<T, Compare, KeyOfValue, Allocator>& lhs,
-    const rb_tree<T, Compare, KeyOfValue, Allocator>& rhs) {
+template <typename T, typename Compare, typename Allocator>
+constexpr bool operator>=(const rb_tree<T, Compare, Allocator>& lhs,
+                          const rb_tree<T, Compare, Allocator>& rhs) {
   return !operator<(lhs, rhs);
 }
 

@@ -24,8 +24,8 @@
  * purpose.  It is provided "as is" without express or implied warranty.
  */
 
-#ifndef GINSHIO_STL__CONTAINER_STL_TREE_BASE_HH_
-#define GINSHIO_STL__CONTAINER_STL_TREE_BASE_HH_ 1
+#ifndef GINSHIO_STL__BASE_STL_TREE_BASE_HH_
+#define GINSHIO_STL__BASE_STL_TREE_BASE_HH_ 1
 
 #include "base/stl_init.hh"
 
@@ -36,8 +36,6 @@
 
 namespace ginshio {
 namespace stl {
-
-namespace tree {
 
 ///////////////////////// binary tree key_of_value /////////////////////////
 template <typename T>
@@ -57,12 +55,15 @@ struct _KeyOfValue<::std::pair<const K, V>> {
 
 ///////////////////////// tag /////////////////////////
 enum class _NodeTag : char { HEADER = 0, NODE = 1 };
-#define _RBTreeColor ::ginshio::stl::tree::_NodeTag
-#define _RBTreeColor_RED ::ginshio::stl::tree::_NodeTag::HEADER
-#define _RBTreeColor_BLACK ::ginshio::stl::tree::_NodeTag::NODE
+#define _RBTreeColor ::ginshio::stl::_NodeTag
+#define _RBTreeColor_RED ::ginshio::stl::_NodeTag::HEADER
+#define _RBTreeColor_BLACK ::ginshio::stl::_NodeTag::NODE
 
 
 
+
+
+namespace __container_base {
 ///////////////////////// binary tree node /////////////////////////
 struct _TreeNodeBase {
   _NodeTag _tag;
@@ -85,10 +86,79 @@ struct _TreeNodeBase {
     return this->_tag == _NodeTag::HEADER;
   }
   void __set_tag(const _NodeTag tag) { this->_tag = tag; }
+  /////////////// get info ///////////////
+  _TreeNodeBase* __get_grandparent() const {
+    return this->_parent == nullptr ? nullptr : this->_parent->_parent;
+  }
+  _TreeNodeBase* __get_uncle() const {
+    _TreeNodeBase* _gp = this->__get_grandparent();
+    if (!_gp) {
+      return nullptr;
+    }
+    return this->_parent == _gp->_left ? _gp->_right : _gp->_left;
+  }
+  _TreeNodeBase* __get_sibling() const {
+    if (this->_parent == nullptr) {
+      return nullptr;
+    }
+    return this == this->_parent->_left ?
+        this->_parent->_right : this->_parent->_left;
+  }
+  /////////////// get most ///////////////
+  _TreeNodeBase* __get_leftmost() const {
+    const _TreeNodeBase* _cur = this;
+    while (_cur->_left != nullptr) {
+      _cur = _cur->_left;
+    }
+    return const_cast<_TreeNodeBase*>(_cur);
+  }
+  _TreeNodeBase* __get_rightmost() const {
+    const _TreeNodeBase* _cur = this;
+    while (_cur->_right != nullptr) {
+      _cur = _cur->_right;
+    }
+    return const_cast<_TreeNodeBase*>(_cur);
+  }
+  /////////////// incr && decr ///////////////
+  static _TreeNodeBase* __increment(_TreeNodeBase* _node) {
+    if (_node->_right != nullptr) {
+      _node = _node->_right;
+      while (_node->_left != nullptr) {
+        _node = _node->_left;
+      }
+    } else {
+      _TreeNodeBase* _pa = _node->_parent;
+      while (_pa->_right == _node) {
+        _node = _pa;
+        _pa = _pa->_parent;
+      }
+      if (_node->_right != _pa) {
+        _node = _pa;
+      }
+    }
+    return _node;
+  }
+  static _TreeNodeBase* __decrement(_TreeNodeBase* _node) {
+    if (_node->_tag == _NodeTag::HEADER &&
+        _node->__get_grandparent() == _node) {
+      return _node->_right;
+    }
+    if (_node->_left != nullptr) {
+      _node = _node->_left;
+      while (_node->_right != nullptr) {
+        _node = _node->_right;
+      }
+    } else {
+      _TreeNodeBase* _pa = _node->_parent;
+      while (_node == _pa->_left) {
+        _node = _pa;
+        _pa = _pa->_parent;
+      }
+      _node = _pa;
+    }
+    return _node;
+  }
 };
-
-_TreeNodeBase* __get_leftmost(const _TreeNodeBase*);
-_TreeNodeBase* __get_rightmost(const _TreeNodeBase*);
 
 struct _TreeNodeHeader : public _TreeNodeBase {
   ::std::size_t _size;
@@ -110,6 +180,7 @@ struct _TreeNodeHeader : public _TreeNodeBase {
     }
     return *this;
   }
+  /////////////// init ///////////////
   void __init_default() {
     this->_parent = nullptr;
     this->_left = this->_right = this;
@@ -118,9 +189,75 @@ struct _TreeNodeHeader : public _TreeNodeBase {
   void __init_other(_TreeNodeHeader& _other) {
     this->_parent = _other._parent;
     this->_size = _other._size;
-    this->_left = ::ginshio::stl::tree::__get_leftmost(_other._parent);
-    this->_right = ::ginshio::stl::tree::__get_rightmost(_other._parent);
+    this->_left = _other._parent->__get_leftmost();
+    this->_right = _other._parent->__get_rightmost();
     this->_parent->_parent = this;
+  }
+  ///////////////////////// rotate /////////////////////////
+  /*
+   * node p to rotate left
+        R                 R
+       / \               / \
+      S   N             S   C
+           \    ===>       / \
+            C             N   Y
+           / \             \
+          X   Y             X
+   */
+  void __rotate_left(_TreeNodeBase* _node) {
+    _TreeNodeBase* _child = _node->_right;
+    _node->_right = _child->_left;
+    if (_child->_left != nullptr) {
+      _child->_left->_parent = _node;
+    }
+    _child->_parent = _node->_parent;
+    if (_node == this->_parent) {
+      this->_parent = _child;
+    } else if (_node == _node->_parent->_left) {
+      _node->_parent->_left = _child;
+    } else {
+      _node->_parent->_right = _child;
+    }
+    _child->_left = _node;
+    _node->_parent = _child;
+  }
+  /*
+   * node p to rotate right
+           R                  R
+          / \                / \
+         N   S              C   S
+        /         ===>     / \
+       C                  X   N
+      / \                      \
+     X   Y                      Y
+  */
+  void __rotate_right(_TreeNodeBase* _node) {
+    _TreeNodeBase* _child = _node->_left;
+    _node->_left = _child->_right;
+    if (_child->_right != nullptr) {
+      _child->_right->_parent = _node;
+    }
+    _child->_parent = _node->_parent;
+    if (_node == this->_parent) {
+      this->_parent = _child;
+    } else if (_node == _node->_parent->_left) {
+      _node->_parent->_left = _child;
+    } else {
+      _node->_parent->_right = _child;
+    }
+    _child->_right = _node;
+    _node->_parent = _child;
+  }
+  /////////////// set most ///////////////
+  void __set_leftmost(_TreeNodeBase* _node) {
+    this->_left->_left = _node;
+    _node->_parent = this->_left;
+    this->_left = _node;
+  }
+  void __set_rightmost(_TreeNodeBase* _node) {
+    this->_right->_right = _node;
+    _node->_parent = this->_right;
+    this->_right = _node;
   }
 };
 
@@ -135,357 +272,6 @@ struct _TreeNode : public _TreeNodeBase {
 
 
 
-///////////////////////// get node /////////////////////////
-inline _TreeNodeBase* __get_grandparent(const _TreeNodeBase* _node) {
-  return !_node ? nullptr : _node->_parent ? _node->_parent->_parent : nullptr;
-}
-inline _TreeNodeBase* __get_uncle(const _TreeNodeBase* _node) {
-  _TreeNodeBase* _gp = __get_grandparent(_node);
-  if (!_gp) {
-    return nullptr;
-  }
-  return _node->_parent == _gp->_left ? _gp->_right : _gp->_left;
-}
-inline _TreeNodeBase* __get_sibling(const _TreeNodeBase* _node) {
-  if (!_node || !_node->_parent) {
-    return nullptr;
-  }
-  return _node == _node->_parent->_left ? _node->_parent->_right
-                                        : _node->_parent->_left;
-}
-_TreeNodeBase* __get_rightmost(const _TreeNodeBase* _root) {
-  if (_root == nullptr) {
-    return nullptr;
-  }
-  while (_root->_right) {
-    _root = _root->_right;
-  }
-  return const_cast<_TreeNodeBase*>(_root);
-}
-_TreeNodeBase* __get_leftmost(const _TreeNodeBase* _root) {
-  if (_root == nullptr) {
-    return nullptr;
-  }
-  while (_root->_left) {
-    _root = _root->_left;
-  }
-  return const_cast<_TreeNodeBase*>(_root);
-}
-
-
-
-///////////////////////// size /////////////////////////
-std::size_t __get_size(const _TreeNodeBase* _node) {
-  if (_node == nullptr) {
-    return 0;
-  }
-  return __get_size(_node->_left) + __get_size(_node->_right) + 1;
-}
-
-
-
-///////////////////////// set leftmost && rightmost /////////////////////////
-void __set_leftmost(_TreeNodeHeader*& _header, _TreeNodeBase* _node) {
-  _header->_left->_left = _node;
-  _node->_parent = _header->_left;
-  _header->_left = _node;
-}
-void __set_rightmost(_TreeNodeHeader*& _header, _TreeNodeBase* _node) {
-  _header->_right->_right = _node;
-  _node->_parent = _header->_right;
-  _header->_right = _node;
-}
-
-
-
-///////////////////////// rotate /////////////////////////
-/*
- * node p to rotate left
-      R                 R
-     / \               / \
-    S   N             S   C
-         \    ===>       / \
-          C             N   Y
-         / \             \
-        X   Y             X
- */
-void __rotate_left(_TreeNodeBase* _node, _TreeNodeHeader*& _header) {
-  _TreeNodeBase* _child = _node->_right;
-  _node->_right = _child->_left;
-  if (_child->_left != nullptr) {
-    _child->_left->_parent = _node;
-  }
-  _child->_parent = _node->_parent;
-  if (_node == _header->_parent) {
-    _header->_parent = _child;
-  } else if (_node == _node->_parent->_left) {
-    _node->_parent->_left = _child;
-  } else {
-    _node->_parent->_right = _child;
-  }
-  _child->_left = _node;
-  _node->_parent = _child;
-}
-/*
- * node p to rotate right
-         R                  R
-        / \                / \
-       N   S              C   S
-      /         ===>     / \
-     C                  X   N
-    / \                      \
-   X   Y                      Y
-*/
-void __rotate_right(_TreeNodeBase* _node, _TreeNodeHeader*& _header) {
-  _TreeNodeBase* _child = _node->_left;
-  _node->_left = _child->_right;
-  if (_child->_right != nullptr) {
-    _child->_right->_parent = _node;
-  }
-  _child->_parent = _node->_parent;
-  if (_node == _header->_parent) {
-    _header->_parent = _child;
-  } else if (_node == _node->_parent->_left) {
-    _node->_parent->_left = _child;
-  } else {
-    _node->_parent->_right = _child;
-  }
-  _child->_right = _node;
-  _node->_parent = _child;
-}
-
-
-
-///////////////////////// incr && decr /////////////////////////
-_TreeNodeBase* __node_increment(_TreeNodeBase* _node) {
-  if (_node->_right != nullptr) {
-    _node = _node->_right;
-    while (_node->_left != nullptr) {
-      _node = _node->_left;
-    }
-  } else {
-    _TreeNodeBase* _pa = _node->_parent;
-    while (_pa->_right == _node) {
-      _node = _pa;
-      _pa = _pa->_parent;
-    }
-    if (_node->_right != _pa) {
-      _node = _pa;
-    }
-  }
-  return _node;
-}
-_TreeNodeBase* __node_decrement(_TreeNodeBase* _node) {
-  if (_node->_tag == _NodeTag::HEADER && _node->_parent->_parent == _node) {
-    return _node->_right;
-  }
-  if (_node->_left != nullptr) {
-    _node = _node->_left;
-    while (_node->_right != nullptr) {
-      _node = _node->_right;
-    }
-  } else {
-    _TreeNodeBase* _pa = _node->_parent;
-    while (_node == _pa->_left) {
-      _node = _pa;
-      _pa = _pa->_parent;
-    }
-    _node = _pa;
-  }
-  return _node;
-}
-
-
-
-///////////////////////// get bound /////////////////////////
-template <typename _T, typename _Key, typename _Comp, typename _KOfV>
-_TreeNodeBase* __lower_bound(const _TreeNode<_T>* _cur,
-                             const _TreeNodeBase* _parent, const _Key& _key,
-                             const _Comp& _comp, const _KOfV& _kofv) {
-  while (_cur != nullptr) {
-    if (!_comp(_kofv(_cur->_data), _key)) {
-      _parent = static_cast<const _TreeNodeBase*>(_cur);
-      _cur = static_cast<_TreeNode<_T>*>(_cur->_left);
-    } else {
-      _cur = static_cast<_TreeNode<_T>*>(_cur->_right);
-    }
-  }
-  return const_cast<_TreeNodeBase*>(_parent);
-}
-template <typename _T, typename _Key, typename _Comp, typename _KOfV>
-_TreeNodeBase* __upper_bound(const _TreeNode<_T>* _cur,
-                             const _TreeNodeBase* _parent, const _Key& _key,
-                             const _Comp& _comp, const _KOfV& _kofv) {
-  while (_cur != nullptr) {
-    if (_comp(_key, _kofv(_cur->_data))) {
-      _parent = static_cast<const _TreeNodeBase*>(_cur);
-      _cur = static_cast<_TreeNode<_T>*>(_cur->_left);
-    } else {
-      _cur = static_cast<_TreeNode<_T>*>(_cur->_right);
-    }
-  }
-  return const_cast<_TreeNodeBase*>(_parent);
-}
-
-
-
-///////////////////////// insert node to tree /////////////////////////
-void __insert_node(_TreeNodeBase* _node, _TreeNodeBase* _parent,
-                   _TreeNodeBase** _child, _TreeNodeHeader* _header) {
-  _node->_parent = _parent;
-  *_child = _node;
-  if ((_parent == _header->_left && _parent->_left == _node) ||
-      _parent == static_cast<_TreeNodeBase*>(_header)) {
-    _header->_left = _node;
-  }
-  if ((_parent == _header->_right && _parent->_right == _node) ||
-      _parent == static_cast<_TreeNodeBase*>(_header)) {
-    _header->_right = _node;
-  }
-}
-template <typename _T, typename _Comp, typename _KOfV>
-void __insert_equal(_TreeNode<_T>*& _node, _TreeNodeHeader*& _header,
-                    const _Comp& _comp, const _KOfV& _kofv) {
-  _TreeNode<_T>* _parent = static_cast<_TreeNode<_T>*>(
-      static_cast<_TreeNodeBase*>(_header));
-  _TreeNodeBase** _tmp = &_parent->_parent;
-  auto& _val = _kofv(_node->_data);
-  while (*_tmp) {
-    _parent = static_cast<_TreeNode<_T>*>(*_tmp);
-    _tmp = _comp(_val, _kofv(_parent->_data)) ?
-        &_parent->_left : &_parent->_right;
-  }
-  __insert_node(_node, _parent, _tmp, _header);
-}
-template <typename _T, typename _Comp, typename _KOfV>
-void __insert_hint_equal(_TreeNode<_T>* _pos, _TreeNode<_T>*& _node,
-                         _TreeNodeHeader* _header,
-                         const _Comp& _comp, const _KOfV& _kofv) {
-  using _NodeBase = _TreeNodeBase;
-  using _NodeType = _TreeNode<_T>;
-  auto& _val = _kofv(_node->_data);
-  if (static_cast<_NodeBase*>(_pos) == static_cast<_NodeBase*>(_header)) {
-    if (_header->_parent != nullptr &&
-        !_comp(_val, _kofv(static_cast<_NodeType*>(_header->_right)->_data))) {
-      return __set_leftmost(_header, _node);
-    } else {
-      return __insert_equal(_node, _header, _comp, _kofv);
-    }
-  } else if (!_comp(_kofv(_pos->_data), _val)) {
-    if (_pos == _header->_left) {
-      return __set_leftmost(_header, _node);
-    }
-    _NodeType* _prev = static_cast<_NodeType*>(__node_decrement(_pos));
-    return !_comp(_val, _kofv(_prev->_data)) ?
-        (_prev->_right == nullptr ?
-         _prev->__set_right(_node) : _pos->__set_left(_node)) :
-        __insert_equal(_node, _header, _comp, _kofv);
-  } else {
-    if (_pos == _header->_right) {
-      return __set_rightmost(_header, _node);
-    }
-    _NodeType* _next = static_cast<_NodeType*>(__node_increment(_pos));
-    return !_comp(_kofv(_next->_data), _val) ?
-        (_next->_left == nullptr ?
-         _next->__set_left(_node) : _pos->__set_right(_node)) :
-        __insert_equal(_node, _header, _comp, _kofv);
-  }
-}
-template <typename _T, typename _Comp, typename _KOfV>
-bool __insert_unique(_TreeNode<_T>*& _node, _TreeNodeHeader*& _header,
-                     const _Comp& _comp, const _KOfV& _kofv) {
-  using _NodeType = _TreeNode<_T>;
-  using _NodeBase = _TreeNodeBase;
-  _NodeType* _parent =
-      static_cast<_NodeType*>(static_cast<_NodeBase*>(_header));
-  _NodeBase** _tmp = &_parent->_parent;
-  auto& _val = _kofv(_node->_data);
-  while (*_tmp) {
-    _parent = static_cast<_NodeType*>(*_tmp);
-    _tmp = _comp(_val, _kofv(_parent->_data)) ?
-        &_parent->_left : &_parent->_right;
-  }
-  if (static_cast<_NodeBase*>(_parent) == static_cast<_NodeBase*>(_header) ||
-      (static_cast<_NodeBase*>(_parent) == _header->_left &&
-       _tmp == &_parent->_left)) {
-    __insert_node(_node, _parent, _tmp, _header);
-    return true;
-  }
-  _NodeType* _prev = _tmp == &_parent->_left ?
-      static_cast<_NodeType*>(__node_decrement(_parent)) : _parent;
-  if (_comp(_kofv(_prev->_data), _val)) {
-    __insert_node(_node, _parent, _tmp, _header);
-    return true;
-  }
-  _node = _prev;
-  return false;
-  // if (_tmp == &_parent->_right &&
-  //     _comp(_kofv(static_cast<_NodeType*>(__node_decrement(_parent))->_data), _val)) {
-  //   _NodeType* _prev = static_cast<_NodeType*>(__node_decrement(_parent));
-  //   if (!_comp(_kofv(_prev->_data), _val)) {
-  //     _node = _prev;
-  //     return false;
-  //   }
-  // }
-  // _node->_parent = _parent;
-  // *_tmp = _node;
-  // if (static_cast<_NodeBase*>(_parent) == static_cast<_NodeBase*>(_header)) {
-  //   _header->_left = _header->_right = _node;
-  //   return true;
-  // }
-  // if (_parent == _header->_left && _parent->_left == _node) {
-  //   _header->_left = _node;
-  // } else if (_parent == _header->_right && _parent->_right == _node) {
-  //   _header->_right = _node;
-  // }
-  // return true;
-}
-template <typename _T, typename _Comp, typename _KOfV>
-bool __insert_hint_unique(_TreeNode<_T>* _pos, _TreeNode<_T>*& _node,
-                          _TreeNodeHeader* _header,
-                          const _Comp& _comp, const _KOfV& _kofv) {
-  using _NodeP = _TreeNode<_T>*;
-  auto& _val = _kofv(_node->_data);
-  if (static_cast<_TreeNodeBase*>(_pos) ==
-      static_cast<_TreeNodeBase*>(_header)) {
-    if (_header->_parent != nullptr &&
-        _comp(_kofv(static_cast<_NodeP>(_header->_right)->_data), _val)) {
-      __set_rightmost(_header, _node);
-      return true;
-    } else {
-      return __insert_unique(_node, _header, _comp, _kofv);
-    }
-  } else if (_comp(_val, _kofv(_pos->_data))) {
-    if (_pos == _header->_left) {
-      __set_leftmost(_header, _node);
-      return true;
-    }
-    _NodeP _prev = static_cast<_NodeP>(__node_decrement(_pos));
-    return _comp(_kofv(_prev->_data), _val) ?
-        (_prev->_right == nullptr ?
-         _prev->__set_right(_node) : _pos->__set_left(_node), true) :
-        __insert_unique(_node, _header, _comp, _kofv);
-  } else if (_pos->_data < _val) {
-    if (_pos == _header->_right) {
-      __set_rightmost(_header, _node);
-      return true;
-    }
-    _NodeP _next = static_cast<_NodeP>(__node_increment(_pos));
-    return _comp(_val, _kofv(_next->_data)) ?
-        (_next->_left == nullptr ?
-         _next->__set_left(_node) : _pos->__set_right(_node), true) :
-        __insert_unique(_node, _header, _comp, _kofv);
-  } else {
-    _node = _pos;
-    return false;
-  }
-}
-
-}  // namespace tree
-
-
-
-namespace __container_base {
 ///////////////////////// tree iterator /////////////////////////
 template <typename _T, typename _Ptr, typename _Ref>
 struct _TreeIterator {
@@ -508,8 +294,8 @@ struct _TreeIterator {
 
   /////////////// node type ///////////////
  public:
-  using _NodeBase = ::ginshio::stl::tree::_TreeNodeBase;
-  using _NodeType = ::ginshio::stl::tree::_TreeNode<_T>;
+  using _NodeBase = ::ginshio::stl::__container_base::_TreeNodeBase;
+  using _NodeType = ::ginshio::stl::__container_base::_TreeNode<_T>;
 
   /////////////// data member ///////////////
  public:
@@ -560,24 +346,27 @@ struct _TreeIterator {
   /////////////// arithmetic operators ///////////////
  public:
   _SelfIterator& operator++() {
-    this->_node = __node_increment(this->_node);
+    this->_node = _NodeBase::__increment(this->_node);
     return *this;
   }
   _SelfIterator operator++(int) {
     _SelfIterator _tmp = *this;
-    this->_node = __node_increment(this->_node);
+    this->_node = _NodeBase::__increment(this->_node);
     return _tmp;
   }
   _SelfIterator& operator--() {
-    this->_node = __node_decrement(this->_node);
+    this->_node = _NodeBase::__decrement(this->_node);
     return *this;
   }
   _SelfIterator& operator--(int) {
     _SelfIterator _tmp = *this;
-    this->_node = __node_decrement(this->_node);
+    this->_node = _NodeBase::__decrement(this->_node);
     return _tmp;
   }
 };
+
+
+
 ///////////////////////// iterator comparison operator /////////////////////////
 template <typename _T, typename _Ptr, typename _Ref>
 constexpr bool operator==(const _TreeIterator<_T, _Ptr, _Ref>& _lit,
@@ -607,8 +396,9 @@ constexpr bool operator!=(
 
 
 ///////////////////////// tree base /////////////////////////
-template <typename _T, typename _Compare, typename _KeyOfValue,
-          typename _Allocator>
+template <typename _T, typename _Compare,
+          typename _Allocator,
+          typename _KeyOfValue = ::ginshio::stl::_KeyOfValue<_T>>
 struct _TreeBase {
   /////////////// member type ///////////////
  protected:
@@ -617,9 +407,9 @@ struct _TreeBase {
   using _KOfVType = _KeyOfValue;
   using _DataAllocType = _Allocator;
   using _DataAllocTraits = std::allocator_traits<_DataAllocType>;
-  using _NodeBase = ::ginshio::stl::tree::_TreeNodeBase;
-  using _NodeHeader = ::ginshio::stl::tree::_TreeNodeHeader;
-  using _NodeType = ::ginshio::stl::tree::_TreeNode<_ValueType>;
+  using _NodeBase = ::ginshio::stl::__container_base::_TreeNodeBase;
+  using _NodeHeader = ::ginshio::stl::__container_base::_TreeNodeHeader;
+  using _NodeType = ::ginshio::stl::__container_base::_TreeNode<_ValueType>;
   using _NodeAllocType =
       typename _DataAllocTraits::template rebind_alloc<_NodeType>;
   using _NodeAllocTraits =
@@ -637,7 +427,7 @@ struct _TreeBase {
   /////////////// implement ///////////////
  protected:
   struct _TreeImpl : public _NodeAllocType, public _CompType, public _KOfVType {
-    ::ginshio::stl::tree::_TreeNodeHeader _header;
+    ::ginshio::stl::__container_base::_TreeNodeHeader _header;
     _TreeImpl() = default;
     _TreeImpl(const _NodeAllocType& _alloc)
         : _NodeAllocType(_alloc) {}
@@ -667,7 +457,7 @@ struct _TreeBase {
       _pre = _cur;
       if (_cur->_right != nullptr) {
         _leftmost->_left = _cur->_right;
-        _leftmost = ::ginshio::stl::tree::__get_leftmost(_leftmost);
+        _leftmost = _leftmost->__get_leftmost();
       }
       _cur = _cur->_left;
       _TreeBase::__put(_impl, static_cast<_NodeType*>(_pre));
@@ -787,8 +577,8 @@ struct _TreeBase {
               Key>::value>::type>
   _Iterator find(const Key& key) {
     _NodeBase* _ret = static_cast<_NodeBase*>(&_impl._header);
-    const _CompType& _comp = static_cast<_CompType>(_impl);
-    const _KOfVType& _kofv = static_cast<_KOfVType>(_impl);
+    const _CompType&& _comp = static_cast<_CompType>(_impl);
+    const _KOfVType&& _kofv = static_cast<_KOfVType>(_impl);
     for (_NodeBase* _cur = _ret->_parent; _cur != nullptr;) {
       if (_comp(_kofv(static_cast<_NodeType*>(_cur)->_data), key)) {
         _cur = static_cast<_NodeType*>(_cur->_right);
@@ -807,8 +597,8 @@ struct _TreeBase {
               Key>::value>::type>
   _ConstIterator find(const Key& key) const {
     const _NodeBase* _ret = static_cast<const _NodeBase*>(&_impl._header);
-    const _CompType& _comp = static_cast<_CompType>(_impl);
-    const _KOfVType& _kofv = static_cast<_KOfVType>(_impl);
+    const _CompType&& _comp = static_cast<_CompType>(_impl);
+    const _KOfVType&& _kofv = static_cast<_KOfVType>(_impl);
     for (_NodeBase* _cur = _ret->_parent; _cur != nullptr;) {
       if (_comp(_kofv(static_cast<_NodeType*>(_cur)->_data), key)) {
         _cur = static_cast<_NodeType*>(_cur->_right);
@@ -841,46 +631,205 @@ struct _TreeBase {
               decltype(::std::declval<_KOfVType>()(::std::declval<_ValueType>())),
               Key>::value>::type>
   _Iterator lower_bound(const Key& key) {
-    return _Iterator(
-        ::ginshio::stl::tree::__lower_bound(
-             static_cast<_NodeType*>(_impl._header._parent),
-             static_cast<_NodeBase*>(&_impl._header), key,
-             static_cast<_CompType>(_impl), static_cast<_KOfVType>(_impl)));
+    return _Iterator(_TreeBase::__lower_bound(
+        _impl, static_cast<_NodeType*>(_impl._header._parent), key));
   }
   template <typename Key,
             typename = typename ::std::enable_if<::std::is_constructible<
               decltype(::std::declval<_KOfVType>()(::std::declval<_ValueType>())),
               Key>::value>::type>
   constexpr _ConstIterator lower_bound(const Key& key) const {
-    return _ConstIterator(
-        ::ginshio::stl::tree::__lower_bound(
-             static_cast<_NodeType*>(_impl._header._parent),
-             static_cast<_NodeBase*>(const_cast<_NodeHeader*>(&_impl._header)),
-             key,
-             static_cast<_CompType>(_impl), static_cast<_KOfVType>(_impl)));
+    return _ConstIterator(_TreeBase::__lower_bound(
+        const_cast<_TreeImpl&>(_impl),
+        static_cast<_NodeType*>(_impl._header._parent), key));
   }
   template <typename Key,
             typename = typename ::std::enable_if<::std::is_constructible<
               decltype(::std::declval<_KOfVType>()(::std::declval<_ValueType>())),
               Key>::value>::type>
   _Iterator upper_bound(const Key& key) {
-    return _Iterator(
-        ::ginshio::stl::tree::__upper_bound(
-             static_cast<_NodeType*>(_impl._header._parent),
-             static_cast<_NodeBase*>(&_impl._header), key,
-             static_cast<_CompType>(_impl), static_cast<_KOfVType>(_impl)));
+    return _Iterator(_TreeBase::__upper_bound(
+        _impl, static_cast<_NodeType*>(_impl._header._parent), key));
   }
   template <typename Key,
             typename = typename ::std::enable_if<::std::is_constructible<
               decltype(::std::declval<_KOfVType>()(::std::declval<_ValueType>())),
               Key>::value>::type>
   constexpr _ConstIterator upper_bound(const Key& key) const {
-    return _ConstIterator(static_cast<_NodeType*>(
-        ::ginshio::stl::tree::__upper_bound(
-             static_cast<_NodeType*>(_impl._header._parent),
-             static_cast<_NodeBase*>(const_cast<_NodeHeader*>(&_impl._header)),
-             key,
-             static_cast<_CompType>(_impl), static_cast<_KOfVType>(_impl))));
+    return _ConstIterator(_TreeBase::__upper_bound(
+        const_cast<_TreeImpl&>(_impl),
+        static_cast<_NodeType*>(_impl._header._parent), key));
+  }
+
+  ///////////////////////// get bound /////////////////////////
+ protected:
+  template <typename _Key>
+  static _NodeBase* __lower_bound(_TreeImpl& _impl, const _NodeType* _node,
+                                  const _Key& _key) {
+    const _CompType&& _comp = static_cast<_CompType>(_impl);
+    const _KOfVType&& _kofv = static_cast<_KOfVType>(_impl);
+    _NodeBase* _res = static_cast<_NodeBase*>(&_impl._header);
+    while (_node != nullptr) {
+      if (!_comp(_kofv(_node->_data), _key)) {
+        _res = static_cast<_NodeBase*>(const_cast<_NodeType*>(_node));
+        _node = static_cast<_NodeType*>(_node->_left);
+      } else {
+        _node = static_cast<_NodeType*>(_node->_right);
+      }
+    }
+    return _res;
+  }
+  template <typename _Key>
+  static _NodeBase* __upper_bound(_TreeImpl& _impl, const _NodeType* _node,
+                                  const _Key& _key) {
+    const _CompType&& _comp = static_cast<_CompType>(_impl);
+    const _KOfVType&& _kofv = static_cast<_KOfVType>(_impl);
+    _NodeBase* _res = static_cast<_NodeBase*>(&_impl._header);
+    while (_node != nullptr) {
+      if (_comp(_key, _kofv(_node->_data))) {
+        _res = static_cast<_NodeBase*>(const_cast<_NodeType*>(_node));
+        _node = static_cast<_NodeType*>(_node->_left);
+      } else {
+        _node = static_cast<_NodeType*>(_node->_right);
+      }
+    }
+    return _res;
+  }
+
+
+
+///////////////////////// insert node to tree /////////////////////////
+ protected:
+  static void __insert_equal(_TreeImpl& _impl, _NodeType*& _node) {
+    const _CompType&& _comp = static_cast<_CompType>(_impl);
+    const _KOfVType&& _kofv = static_cast<_KOfVType>(_impl);
+    _NodeType* _parent =
+        static_cast<_NodeType*>(static_cast<_NodeBase*>(&_impl._header));
+    _NodeBase** _tmp = &_parent->_parent;
+    auto& _val = _kofv(_node->_data);
+    while (*_tmp) {
+      _parent = static_cast<_NodeType*>(*_tmp);
+      _tmp = _comp(_val, _kofv(_parent->_data)) ?
+          &_parent->_left : &_parent->_right;
+    }
+    _node->_parent = _parent;
+    *_tmp = _node;
+    if ((_parent == _impl._header._left && _parent->_left == _node) ||
+      _parent == static_cast<_TreeNodeBase*>(&_impl._header)) {
+      _impl._header._left = _node;
+    }
+    if ((_parent == _impl._header._right && _parent->_right == _node) ||
+      _parent == static_cast<_TreeNodeBase*>(&_impl._header)) {
+      _impl._header._right = _node;
+    }
+  }
+  static void __insert_hint_equal(_TreeImpl& _impl, _NodeType* _pos,
+                                  _NodeType*& _node) {
+    const _CompType&& _comp = static_cast<_CompType>(_impl);
+    const _KOfVType&& _kofv = static_cast<_KOfVType>(_impl);
+    auto& _val = _kofv(_node->_data);
+    if (_pos == static_cast<_NodeBase*>(&_impl._header)) {
+      if (_impl._header._parent != nullptr &&
+          !_comp(_val,
+                 _kofv(static_cast<_NodeType*>(_impl._header._right)->_data))) {
+        return _impl._header.__set_leftmost(_node);
+      } else {
+        return __insert_equal(_impl, _node);
+      }
+    } else if (!_comp(_kofv(_pos->_data), _val)) {
+      if (_pos == _impl._header._left) {
+        return _impl._header.__set_leftmost(_node);
+      }
+      _NodeType* _prev = static_cast<_NodeType*>(_NodeBase::__decrement(_pos));
+      return !_comp(_val, _kofv(_prev->_data)) ?
+          (_prev->_right == nullptr ?
+           _prev->__set_right(_node) : _pos->__set_left(_node)) :
+          __insert_equal(_impl, _node);
+    } else {
+      if (_pos == _impl._header._right) {
+        return _impl._header.__set_rightmost(_node);
+      }
+      _NodeType* _next = static_cast<_NodeType*>(_NodeBase::__increment(_pos));
+      return !_comp(_kofv(_next->_data), _val) ?
+          (_next->_left == nullptr ?
+           _next->__set_left(_node) : _pos->__set_right(_node)) :
+          __insert_equal(_impl, _node);
+    }
+  }
+  static bool __insert_unique(_TreeImpl& _impl, _NodeType*& _node) {
+    const _CompType&& _comp = static_cast<_CompType>(_impl);
+    const _KOfVType&& _kofv = static_cast<_KOfVType>(_impl);
+    _NodeType* _parent =
+        static_cast<_NodeType*>(static_cast<_NodeBase*>(&_impl._header));
+    _NodeBase** _tmp = &_parent->_parent;
+    auto& _val = _kofv(_node->_data);
+    while (*_tmp) {
+      _parent = static_cast<_NodeType*>(*_tmp);
+      _tmp = _comp(_val, _kofv(_parent->_data)) ?
+          &_parent->_left : &_parent->_right;
+    }
+    if (_parent == static_cast<_NodeBase*>(&_impl._header)) {
+      _node->_parent = _parent;
+      *_tmp = _node;
+      _impl._header._left = _impl._header._right = _node;
+      return true;
+    }
+    if (_parent == _impl._header._left && _tmp == &_parent->_left) {
+      _node->_parent = _parent;
+      *_tmp = _node;
+      _impl._header._left = _node;
+      return true;
+    }
+    _NodeType* _prev = _tmp == &_parent->_left ?
+        static_cast<_NodeType*>(_NodeBase::__decrement(_parent)) : _parent;
+    if (_comp(_kofv(_prev->_data), _val)) {
+      _node->_parent = _parent;
+      *_tmp = _node;
+      if (_parent == _impl._header._right && _parent->_right == _node) {
+        _impl._header._right = _node;
+      }
+      return true;
+    }
+    _node = _prev;
+    return false;
+  }
+  static bool __insert_hint_unique(_TreeImpl& _impl, _NodeType* _pos,
+                                   _NodeType*& _node) {
+    const _CompType&& _comp = static_cast<_CompType>(_impl);
+    const _KOfVType&& _kofv = static_cast<_KOfVType>(_impl);
+    auto& _val = _kofv(_node->_data);
+    if (_pos == static_cast<_NodeBase*>(&_impl._header)) {
+      if (_impl._header._parent != nullptr &&
+          _comp(_kofv(
+              static_cast<_NodeType*>(_impl._header._right)->_data), _val)) {
+        _impl._header.__set_rightmost(_node);
+        return true;
+      } else {
+        return __insert_unique(_impl, _node);
+      }
+    } else if (_comp(_val, _kofv(_pos->_data))) {
+      if (_pos == _impl._header._left) {
+        _impl._header.__set_leftmost(_node);
+        return true;
+      }
+      _NodeType* _prev = static_cast<_NodeType*>(_NodeBase::__decrement(_pos));
+      return _comp(_kofv(_prev->_data), _val) ?
+          (_prev->_right == nullptr ?
+           _prev->__set_right(_node) : _pos->__set_left(_node), true) :
+          __insert_unique(_impl, _node);
+    } else if (_comp(_kofv(_pos->_data), _val)) {
+      if (_pos == _impl._header._right) {
+        _impl._header.__set_rightmost(_node);
+        return true;
+      }
+      _NodeType* _next = static_cast<_NodeType*>(_NodeBase::__increment(_pos));
+      return _comp(_val, _kofv(_next->_data)) ?
+          (_next->_left == nullptr ?
+           _next->__set_left(_node) : _pos->__set_right(_node), true) :
+          __insert_unique(_impl, _node);
+    }
+    _node = _pos;
+    return false;
   }
 };
 
@@ -888,4 +837,4 @@ struct _TreeBase {
 }  // namespace stl
 }  // namespace ginshio
 
-#endif  // GINSHIO_STL__CONTAINER_STL_TREE_BASE_HH_
+#endif  // GINSHIO_STL__BASE_STL_TREE_BASE_HH_

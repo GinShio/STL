@@ -37,10 +37,7 @@ class set;
 ///////////////////////// multiset /////////////////////////
 template <typename Key, typename Compare = ::std::less<Key>,
           typename Allocator = ::std::allocator<Key>,
-          typename Container =
-          ::ginshio::stl::rb_tree<Key, Compare,
-                                  ::ginshio::stl::tree::_KeyOfValue<Key>,
-                                  Allocator>>
+          typename Container = ::ginshio::stl::rb_tree<Key, Compare, Allocator>>
 class multiset {
   /////////////// private type ///////////////
  private:

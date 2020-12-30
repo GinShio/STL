@@ -1,6 +1,6 @@
 clang
 -Wall -Wextra
 %c -std=c11
-%cc %cpp %cxx %tcc -std=c++14
+%cc %cpp %cxx %tcc -std=c++11
 %hh %hpp %hxx c++-header
 -I./include/

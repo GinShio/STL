@@ -29,7 +29,7 @@
 
 #include "base/stl_init.hh"
 #include "base/stl_iterator_traits.hh"
-#include "container/stl_tree_base.hh"
+#include "base/stl_tree_base.hh"
 
 #include <cstddef>
 #include <cstdlib>
